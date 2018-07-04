@@ -1,0 +1,408 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{B42FB4F1-3B37-4311-A675-30B0177D3CE3}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>InventoryManagementSystem</RootNamespace>
+    <AssemblyName>InventoryManagementSystem</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="CrystalDecisions.CrystalReports.Engine, Version=13.0.2000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL" />
+    <Reference Include="CrystalDecisions.ReportSource, Version=13.0.2000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL" />
+    <Reference Include="CrystalDecisions.Shared, Version=13.0.2000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL" />
+    <Reference Include="CrystalDecisions.Windows.Forms, Version=13.0.2000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.ReportViewer.Common, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.ReportViewer.WinForms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="Microsoft.VisualBasic.PowerPacks.Vs, Version=10.0.0.0" />
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Design" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AddLocation.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AddLocation.Designer.cs">
+      <DependentUpon>AddLocation.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AddNewSupplier.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AddNewSupplier.Designer.cs">
+      <DependentUpon>AddNewSupplier.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ChangeLocation.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ChangeLocation.Designer.cs">
+      <DependentUpon>ChangeLocation.cs</DependentUpon>
+    </Compile>
+    <Compile Include="EditSupplierDetail.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EditSupplierDetail.Designer.cs">
+      <DependentUpon>EditSupplierDetail.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FindItem.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FindItem.designer.cs">
+      <DependentUpon>FindItem.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ItemReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ItemReport.Designer.cs">
+      <DependentUpon>ItemReport.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Items.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Items.Designer.cs">
+      <DependentUpon>Items.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Locations.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Locations.Designer.cs">
+      <DependentUpon>Locations.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NewPurchaseOrder.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NewPurchaseOrder.designer.cs">
+      <DependentUpon>NewPurchaseOrder.cs</DependentUpon>
+    </Compile>
+    <Compile Include="OrdersList.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OrdersList.Designer.cs">
+      <DependentUpon>OrdersList.cs</DependentUpon>
+    </Compile>
+    <Compile Include="OrdersListDetail.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OrdersListDetail.Designer.cs">
+      <DependentUpon>OrdersListDetail.cs</DependentUpon>
+    </Compile>
+    <Compile Include="POdataSet.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>POdataSet.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="PrintPO.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PrintPO.designer.cs">
+      <DependentUpon>PrintPO.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AddLocation.resx">
+      <DependentUpon>AddLocation.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AddNewSupplier.resx">
+      <DependentUpon>AddNewSupplier.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ChangeLocation.resx">
+      <DependentUpon>ChangeLocation.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="EditSupplierDetail.resx">
+      <DependentUpon>EditSupplierDetail.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FindItem.resx">
+      <DependentUpon>FindItem.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ItemReport.resx">
+      <DependentUpon>ItemReport.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Items.resx">
+      <DependentUpon>Items.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Locations.resx">
+      <DependentUpon>Locations.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NewPurchaseOrder.resx">
+      <DependentUpon>NewPurchaseOrder.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OrdersList.resx">
+      <DependentUpon>OrdersList.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OrdersListDetail.resx">
+      <DependentUpon>OrdersListDetail.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="POReport.rdlc" />
+    <EmbeddedResource Include="PrintPO.resx">
+      <DependentUpon>PrintPO.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PurchaseOrderReport.resx">
+      <DependentUpon>PurchaseOrderReport.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ReceiveStock.resx">
+      <DependentUpon>ReceiveStock.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SellStock.resx">
+      <DependentUpon>SellStock.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SplashForm.resx">
+      <DependentUpon>SplashForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="StockInHandReport.rdlc" />
+    <EmbeddedResource Include="StockTransactionsReport.resx">
+      <DependentUpon>StockTransactionsReport.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="StockTransationsReport.rdlc" />
+    <EmbeddedResource Include="SupplierDetails.resx">
+      <DependentUpon>SupplierDetails.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TransferStock.resx">
+      <DependentUpon>TransferStock.cs</DependentUpon>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="PurchaseOrderReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PurchaseOrderReport.Designer.cs">
+      <DependentUpon>PurchaseOrderReport.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ReceiveStock.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ReceiveStock.designer.cs">
+      <DependentUpon>ReceiveStock.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SellStock.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SellStock.Designer.cs">
+      <DependentUpon>SellStock.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SplashForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SplashForm.Designer.cs">
+      <DependentUpon>SplashForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="StockDataSet.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>StockDataSet.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="StockInHandDataSet.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>StockInHandDataSet.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="StockTransactionsReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="StockTransactionsReport.Designer.cs">
+      <DependentUpon>StockTransactionsReport.cs</DependentUpon>
+    </Compile>
+    <Compile Include="StockTransationsDataSet.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>StockTransationsDataSet.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="SupplierDetails.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SupplierDetails.Designer.cs">
+      <DependentUpon>SupplierDetails.cs</DependentUpon>
+    </Compile>
+    <Compile Include="TransferStock.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TransferStock.designer.cs">
+      <DependentUpon>TransferStock.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\new.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\new_red_icon.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Location.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\BG_TE1_Mdfd.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Reports.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="POdataSet.xsc">
+      <DependentUpon>POdataSet.xsd</DependentUpon>
+    </None>
+    <None Include="POdataSet.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>POdataSet.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="POdataSet.xss">
+      <DependentUpon>POdataSet.xsd</DependentUpon>
+    </None>
+    <None Include="Resources\Suppliers.jpg" />
+    <None Include="StockDataSet.xsc">
+      <DependentUpon>StockDataSet.xsd</DependentUpon>
+    </None>
+    <None Include="StockDataSet.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>StockDataSet.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="StockDataSet.xss">
+      <DependentUpon>StockDataSet.xsd</DependentUpon>
+    </None>
+    <None Include="StockInHandDataSet.xsc">
+      <DependentUpon>StockInHandDataSet.xsd</DependentUpon>
+    </None>
+    <None Include="StockInHandDataSet.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>StockInHandDataSet.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="StockInHandDataSet.xss">
+      <DependentUpon>StockInHandDataSet.xsd</DependentUpon>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{967B4E0D-AD0C-4609-AB67-0FA40C0206D8}" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\spaceball.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\loading.gif" />
+    <None Include="StockTransationsDataSet.xsc">
+      <DependentUpon>StockTransationsDataSet.xsd</DependentUpon>
+    </None>
+    <None Include="StockTransationsDataSet.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>StockTransationsDataSet.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="StockTransationsDataSet.xss">
+      <DependentUpon>StockTransationsDataSet.xsd</DependentUpon>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
