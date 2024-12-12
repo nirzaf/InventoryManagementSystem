@@ -1,0 +1,15 @@
+**/bin
+**/obj
+**/.vs
+**/.vscode
+**/.idea
+**/.git
+**/.github
+**/logs
+**/*.user
+**/packages
+**/TestResults
+**/*.md
+**/*.log
+InventoryManagementSystem/
+!README.md
