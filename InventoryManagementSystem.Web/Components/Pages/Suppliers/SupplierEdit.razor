@@ -1,0 +1,67 @@
+@page "/Suppliers/Edit/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ISupplierService SupplierService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Edit Supplier</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Edit Supplier</MudText>
+<MudDivider Class="mb-4" />
+
+@if (_supplier == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="1" Class="pa-4">
+                <EditForm Model="@_supplier" OnValidSubmit="OnValidSubmit">
+                    <DataAnnotationsValidator />
+                    <MudTextField @bind-Value="_supplier.Name" Label="Name" Required="true" For="@(() => _supplier.Name)" Class="mb-3" />
+                    <MudTextField @bind-Value="_supplier.ContactPerson" Label="Contact Person" For="@(() => _supplier.ContactPerson)" Class="mb-3" />
+                    <MudTextField @bind-Value="_supplier.Phone" Label="Phone" For="@(() => _supplier.Phone)" Class="mb-3" />
+                    <MudTextField @bind-Value="_supplier.Email" Label="Email" For="@(() => _supplier.Email)" Class="mb-3" />
+                    <MudTextField @bind-Value="_supplier.Address" Label="Address" Lines="3" For="@(() => _supplier.Address)" Class="mb-3" />
+
+                    <div class="d-flex gap-2 mt-4">
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save Changes</MudButton>
+                        <MudButton Href="/Suppliers" Variant="Variant.Outlined" Color="Color.Secondary">Cancel</MudButton>
+                    </div>
+                </EditForm>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Supplier? _supplier;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _supplier = await SupplierService.GetByIdAsync(Id);
+    }
+
+    private async Task OnValidSubmit()
+    {
+        if (_supplier != null)
+        {
+            try
+            {
+                await SupplierService.UpdateAsync(_supplier);
+                Snackbar.Add("Supplier updated successfully", Severity.Success);
+                Nav.NavigateTo("/Suppliers");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+}

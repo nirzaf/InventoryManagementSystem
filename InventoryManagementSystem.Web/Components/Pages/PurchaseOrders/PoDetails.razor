@@ -1,0 +1,110 @@
+@page "/PurchaseOrders/Details/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IPurchaseOrderService POService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Purchase Order Details</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Purchase Order Details</MudText>
+<MudDivider Class="mb-4" />
+
+@if (_po == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudPaper Elevation="1" Class="pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="6" sm="3"><MudText Typo="Typo.subtitle2" Color="Color.Secondary">PO Number</MudText></MudItem>
+            <MudItem xs="6" sm="3"><MudText>@_po.PONumber</MudText></MudItem>
+            
+            <MudItem xs="6" sm="3"><MudText Typo="Typo.subtitle2" Color="Color.Secondary">Date</MudText></MudItem>
+            <MudItem xs="6" sm="3"><MudText>@_po.OrderDate.ToString("yyyy-MM-dd")</MudText></MudItem>
+
+            <MudItem xs="6" sm="3"><MudText Typo="Typo.subtitle2" Color="Color.Secondary">Supplier</MudText></MudItem>
+            <MudItem xs="6" sm="3"><MudText>@_po.Supplier?.Name</MudText></MudItem>
+
+            <MudItem xs="6" sm="3"><MudText Typo="Typo.subtitle2" Color="Color.Secondary">Status</MudText></MudItem>
+            <MudItem xs="6" sm="3">
+                <MudChip T="string" Color="@GetStatusColor(_po.Status)" Size="Size.Small">@_po.Status.ToString()</MudChip>
+            </MudItem>
+
+            <MudItem xs="6" sm="3"><MudText Typo="Typo.subtitle2" Color="Color.Secondary">Total Amount</MudText></MudItem>
+            <MudItem xs="6" sm="3"><MudText>@_po.TotalAmount.ToString("C")</MudText></MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudText Typo="Typo.h6" Class="mb-3">Line Items</MudText>
+
+    <MudTable Items="@_po.OrderDetails" Dense="true" Hover="true" Striped="true" Elevation="1">
+        <HeaderContent>
+            <MudTh>Item</MudTh>
+            <MudTh Style="text-align:right">Quantity</MudTh>
+            <MudTh Style="text-align:right">Unit Price</MudTh>
+            <MudTh Style="text-align:right">Total</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Item">@context.Item?.ItemCode - @context.Item?.Description</MudTd>
+            <MudTd DataLabel="Quantity" Style="text-align:right">@context.Quantity</MudTd>
+            <MudTd DataLabel="Unit Price" Style="text-align:right">@context.UnitPrice.ToString("C")</MudTd>
+            <MudTd DataLabel="Total" Style="text-align:right">@((context.Quantity * context.UnitPrice).ToString("C"))</MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <div class="mt-4 d-flex gap-2">
+        @if (_po.Status == PurchaseOrderStatus.Pending)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => UpdateStatus(PurchaseOrderStatus.Approved))">Approve</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="@(() => UpdateStatus(PurchaseOrderStatus.Cancelled))">Cancel PO</MudButton>
+        }
+        @if (_po.Status == PurchaseOrderStatus.Approved)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Info" OnClick="@(() => UpdateStatus(PurchaseOrderStatus.Received))">Mark as Received</MudButton>
+        }
+        <MudButton Href="/PurchaseOrders" Variant="Variant.Outlined" Color="Color.Secondary">Back to List</MudButton>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private PurchaseOrder? _po;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _po = await POService.GetByIdAsync(Id);
+    }
+
+    private Color GetStatusColor(PurchaseOrderStatus status)
+    {
+        return status switch
+        {
+            PurchaseOrderStatus.Pending => Color.Warning,
+            PurchaseOrderStatus.Approved => Color.Success,
+            PurchaseOrderStatus.Received => Color.Info,
+            PurchaseOrderStatus.Cancelled => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private async Task UpdateStatus(PurchaseOrderStatus newStatus)
+    {
+        if (_po != null)
+        {
+            try
+            {
+                await POService.UpdateStatusAsync(_po.Id, newStatus.ToString());
+                Snackbar.Add($"Status updated to {newStatus}", Severity.Success);
+                _po = await POService.GetByIdAsync(Id); // Reload
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+}

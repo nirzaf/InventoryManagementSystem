@@ -1,0 +1,124 @@
+@page "/PurchaseOrders/Create"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IPurchaseOrderService POService
+@inject ISupplierService SupplierService
+@inject IItemService ItemService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Create Purchase Order</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Create Purchase Order</MudText>
+<MudDivider Class="mb-4" />
+
+<MudGrid>
+    <MudItem xs="12" md="10">
+        <MudPaper Elevation="1" Class="pa-4">
+            <EditForm Model="@_po" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_po.PONumber" Label="PO Number" Required="true" Class="mb-3" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="int" @bind-Value="_po.SupplierId" Label="Supplier" AnchorOrigin="Origin.BottomCenter" Required="true" Class="mb-3">
+                            <MudSelectItem Value="@(0)">-- Select Supplier --</MudSelectItem>
+                            @foreach (var supplier in _suppliers)
+                            {
+                                <MudSelectItem Value="@supplier.Id">@supplier.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.h6" Class="mt-4 mb-2">Line Items</MudText>
+                
+                @foreach (var item in _po.OrderDetails)
+                {
+                    <MudGrid Class="align-center mb-2">
+                        <MudItem xs="5">
+                            <MudSelect @bind-Value="item.ItemId" Label="Item" AnchorOrigin="Origin.BottomCenter" Required="true">
+                                <MudSelectItem Value="@(0)">-- Select Item --</MudSelectItem>
+                                @foreach (var i in _items)
+                                {
+                                    <MudSelectItem Value="@i.Id">@i.ItemCode - @i.Description</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="3">
+                            <MudNumericField @bind-Value="item.Quantity" Label="Qty" Min="1" Required="true" />
+                        </MudItem>
+                        <MudItem xs="3">
+                            <MudNumericField @bind-Value="item.UnitPrice" Label="Unit Price" Format="N2" Required="true" />
+                        </MudItem>
+                        <MudItem xs="1" Class="d-flex justify-center align-end">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(e => RemoveLineItem(item))" />
+                        </MudItem>
+                    </MudGrid>
+                }
+                
+                <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Color="Color.Secondary" OnClick="@(e => AddLineItem())" Class="mt-3 mb-5">Add Item</MudButton>
+
+                <div class="d-flex gap-2 mt-4">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Create Purchase Order</MudButton>
+                    <MudButton Href="/PurchaseOrders" Variant="Variant.Outlined" Color="Color.Secondary">Cancel</MudButton>
+                </div>
+            </EditForm>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private PurchaseOrder _po = new() 
+    { 
+        OrderDate = DateTime.UtcNow,
+        OrderDetails = new List<OrderDetail> { new OrderDetail() }
+    };
+    private IEnumerable<Supplier> _suppliers = new List<Supplier>();
+    private IEnumerable<Item> _items = new List<Item>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _suppliers = await SupplierService.GetAllAsync();
+        _items = await ItemService.GetAllAsync();
+    }
+
+    private void AddLineItem()
+    {
+        _po.OrderDetails.Add(new OrderDetail());
+    }
+
+    private void RemoveLineItem(OrderDetail item)
+    {
+        if (_po.OrderDetails.Count > 1)
+        {
+            _po.OrderDetails.Remove(item);
+        }
+        else
+        {
+            Snackbar.Add("A purchase order must have at least one line item.", Severity.Warning);
+        }
+    }
+
+    private async Task OnValidSubmit()
+    {
+        if (!_po.OrderDetails.Any(d => d.ItemId > 0))
+        {
+            Snackbar.Add("Please specify valid line items.", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            await POService.CreateAsync(_po, _po.OrderDetails.ToList());
+            Snackbar.Add("Purchase order created successfully", Severity.Success);
+            Nav.NavigateTo("/PurchaseOrders");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

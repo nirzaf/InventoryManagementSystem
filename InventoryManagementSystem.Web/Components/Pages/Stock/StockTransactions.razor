@@ -1,0 +1,76 @@
+@page "/Stock/Transactions"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IStockService StockService
+
+<PageTitle>Stock Transactions</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Stock Transactions</MudText>
+<MudDivider Class="mb-4" />
+
+<MudPaper Elevation="1" Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" sm="4">
+            <MudDatePicker Label="From Date" @bind-Date="_fromDate" Clearable="true" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudDatePicker Label="To Date" @bind-Date="_toDate" Clearable="true" />
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex align-end">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData" FullWidth="true">Filter</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudTable Items="@_transactions" Dense="true" Hover="true" Striped="true" Elevation="1">
+    <HeaderContent>
+        <MudTh>Date</MudTh>
+        <MudTh>Type</MudTh>
+        <MudTh>Item Code</MudTh>
+        <MudTh>From</MudTh>
+        <MudTh>To</MudTh>
+        <MudTh Style="text-align:right">Qty</MudTh>
+        <MudTh>Notes</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Date">@context.TransactionDate.ToString("yyyy-MM-dd HH:mm")</MudTd>
+        <MudTd DataLabel="Type">
+            <MudChip T="string" Color="@GetTypeColor(context.TransactionType)" Size="Size.Small">@context.TransactionType.ToString()</MudChip>
+        </MudTd>
+        <MudTd DataLabel="Item Code">@context.Item?.ItemCode</MudTd>
+        <MudTd DataLabel="From">@context.FromLocation?.Name</MudTd>
+        <MudTd DataLabel="To">@context.ToLocation?.Name</MudTd>
+        <MudTd DataLabel="Qty" Style="text-align:right">@context.Quantity</MudTd>
+        <MudTd DataLabel="Notes">@context.Notes</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IEnumerable<StockTransaction> _transactions = new List<StockTransaction>();
+    private DateTime? _fromDate;
+    private DateTime? _toDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _transactions = await StockService.GetTransactionsAsync(_fromDate, _toDate);
+    }
+
+    private Color GetTypeColor(TransactionType type)
+    {
+        return type switch
+        {
+            TransactionType.Receive => Color.Success,
+            TransactionType.Transfer => Color.Info,
+            TransactionType.Sell => Color.Warning,
+            _ => Color.Default
+        };
+    }
+}

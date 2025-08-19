@@ -1,0 +1,48 @@
+@page "/Items/Details/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IItemService ItemService
+
+<PageTitle>Item Details</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Item Details</MudText>
+<MudDivider Class="mb-4" />
+
+@if (_item == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudPaper Elevation="1" Class="pa-4">
+        <MudGrid>
+            <MudItem xs="4" sm="3"><MudText Typo="Typo.subtitle2" Color="Color.Secondary">Item Code</MudText></MudItem>
+            <MudItem xs="8" sm="9"><MudText>@_item.ItemCode</MudText></MudItem>
+            
+            <MudItem xs="4" sm="3"><MudText Typo="Typo.subtitle2" Color="Color.Secondary">Description</MudText></MudItem>
+            <MudItem xs="8" sm="9"><MudText>@_item.Description</MudText></MudItem>
+
+            <MudItem xs="4" sm="3"><MudText Typo="Typo.subtitle2" Color="Color.Secondary">Rate</MudText></MudItem>
+            <MudItem xs="8" sm="9"><MudText>@_item.Rate.ToString("C")</MudText></MudItem>
+
+            <MudItem xs="4" sm="3"><MudText Typo="Typo.subtitle2" Color="Color.Secondary">Supplier</MudText></MudItem>
+            <MudItem xs="8" sm="9"><MudText>@_item.Supplier?.Name</MudText></MudItem>
+        </MudGrid>
+        <div class="mt-4">
+            <MudButton Href="@($"/Items/Edit/{_item.Id}")" Variant="Variant.Filled" Color="Color.Warning" Class="mr-2">Edit</MudButton>
+            <MudButton Href="/Items" Variant="Variant.Outlined" Color="Color.Secondary">Back to List</MudButton>
+        </div>
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Item? _item;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _item = await ItemService.GetByIdAsync(Id);
+    }
+}

@@ -1,0 +1,83 @@
+@page "/Locations"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ILocationService LocationService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Locations</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h4" Color="Color.Primary">Locations</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/Locations/Create">Add New Location</MudButton>
+</div>
+
+<MudTable Items="@_locations" Dense="true" Hover="true" Striped="true" Filter="new Func<Location,bool>(FilterFunc)">
+    <ToolBarContent>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<Location, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Location, object>(x=>x.Address ?? string.Empty)">Address</MudTableSortLabel></MudTh>
+        <MudTh Style="text-align:right">Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Address">@context.Address</MudTd>
+        <MudTd DataLabel="Actions" Style="text-align:right">
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Href="@($"/Locations/Edit/{context.Id}")" Class="mr-2">Edit</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => DeleteLocation(context))">Delete</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IEnumerable<Location> _locations = new List<Location>();
+    private string _searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _locations = await LocationService.GetAllAsync();
+    }
+
+    private bool FilterFunc(Location element) => FilterFunc(element, _searchString);
+
+    private bool FilterFunc(Location element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (element.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (element.Address?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        return false;
+    }
+
+    private async Task DeleteLocation(Location location)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Warning", 
+            $"Are you sure you want to delete {location.Name}?", 
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            try
+            {
+                await LocationService.DeleteAsync(location.Id);
+                Snackbar.Add("Location deleted successfully", Severity.Success);
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+}

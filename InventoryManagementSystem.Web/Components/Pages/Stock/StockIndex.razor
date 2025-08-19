@@ -1,0 +1,58 @@
+@page "/Stock/Index"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IStockService StockService
+
+<PageTitle>Stock Overview</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h4" Color="Color.Primary">Stock Overview</MudText>
+    <div class="d-flex gap-2">
+        <MudButton Variant="Variant.Filled" Color="Color.Success" Href="/Stock/Receive">Receive Stock</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Info" Href="/Stock/Transfer">Transfer Stock</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" Href="/Stock/Sell">Sell Stock</MudButton>
+    </div>
+</div>
+
+<MudTable Items="@_stocks" Dense="true" Hover="true" Striped="true" Filter="new Func<StockInHand,bool>(FilterFunc)">
+    <ToolBarContent>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<StockInHand, object>(x=>x.Item?.ItemCode ?? string.Empty)">Item Code</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<StockInHand, object>(x=>x.Item?.Description ?? string.Empty)">Description</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<StockInHand, object>(x=>x.Location?.Name ?? string.Empty)">Location</MudTableSortLabel></MudTh>
+        <MudTh Style="text-align:right"><MudTableSortLabel SortBy="new Func<StockInHand, object>(x=>x.Quantity)">Quantity</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Item Code">@context.Item?.ItemCode</MudTd>
+        <MudTd DataLabel="Description">@context.Item?.Description</MudTd>
+        <MudTd DataLabel="Location">@context.Location?.Name</MudTd>
+        <MudTd DataLabel="Quantity" Style="text-align:right">@context.Quantity</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IEnumerable<StockInHand> _stocks = new List<StockInHand>();
+    private string _searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stocks = await StockService.GetAllAsync();
+    }
+
+    private bool FilterFunc(StockInHand element) => FilterFunc(element, _searchString);
+
+    private bool FilterFunc(StockInHand element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (element.Item?.ItemCode?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (element.Item?.Description?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (element.Location?.Name?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        return false;
+    }
+}

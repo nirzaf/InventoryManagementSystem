@@ -1,0 +1,49 @@
+@page "/Suppliers/Create"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ISupplierService SupplierService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Create Supplier</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Create Supplier</MudText>
+<MudDivider Class="mb-4" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="1" Class="pa-4">
+            <EditForm Model="@_supplier" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <MudTextField @bind-Value="_supplier.Name" Label="Name" Required="true" For="@(() => _supplier.Name)" Class="mb-3" />
+                <MudTextField @bind-Value="_supplier.ContactPerson" Label="Contact Person" For="@(() => _supplier.ContactPerson)" Class="mb-3" />
+                <MudTextField @bind-Value="_supplier.Phone" Label="Phone" For="@(() => _supplier.Phone)" Class="mb-3" />
+                <MudTextField @bind-Value="_supplier.Email" Label="Email" For="@(() => _supplier.Email)" Class="mb-3" />
+                <MudTextField @bind-Value="_supplier.Address" Label="Address" Lines="3" For="@(() => _supplier.Address)" Class="mb-3" />
+
+                <div class="d-flex gap-2 mt-4">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Create</MudButton>
+                    <MudButton Href="/Suppliers" Variant="Variant.Outlined" Color="Color.Secondary">Cancel</MudButton>
+                </div>
+            </EditForm>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private Supplier _supplier = new();
+
+    private async Task OnValidSubmit()
+    {
+        try
+        {
+            await SupplierService.CreateAsync(_supplier);
+            Snackbar.Add("Supplier created successfully", Severity.Success);
+            Nav.NavigateTo("/Suppliers");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

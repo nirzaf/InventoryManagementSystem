@@ -1,0 +1,88 @@
+@page "/Suppliers"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ISupplierService SupplierService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Suppliers</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h4" Color="Color.Primary">Suppliers</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/Suppliers/Create">Add New Supplier</MudButton>
+</div>
+
+<MudTable Items="@_suppliers" Dense="true" Hover="true" Striped="true" Filter="new Func<Supplier,bool>(FilterFunc)">
+    <ToolBarContent>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<Supplier, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Supplier, object>(x=>x.ContactPerson ?? string.Empty)">Contact Person</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Supplier, object>(x=>x.Phone ?? string.Empty)">Phone</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Supplier, object>(x=>x.Email ?? string.Empty)">Email</MudTableSortLabel></MudTh>
+        <MudTh Style="text-align:right">Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Contact Person">@context.ContactPerson</MudTd>
+        <MudTd DataLabel="Phone">@context.Phone</MudTd>
+        <MudTd DataLabel="Email">@context.Email</MudTd>
+        <MudTd DataLabel="Actions" Style="text-align:right">
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Href="@($"/Suppliers/Edit/{context.Id}")" Class="mr-2">Edit</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => DeleteSupplier(context))">Delete</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IEnumerable<Supplier> _suppliers = new List<Supplier>();
+    private string _searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _suppliers = await SupplierService.GetAllAsync();
+    }
+
+    private bool FilterFunc(Supplier element) => FilterFunc(element, _searchString);
+
+    private bool FilterFunc(Supplier element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (element.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (element.ContactPerson?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        if (element.Email?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        return false;
+    }
+
+    private async Task DeleteSupplier(Supplier supplier)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Warning", 
+            $"Are you sure you want to delete {supplier.Name}?", 
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            try
+            {
+                await SupplierService.DeleteAsync(supplier.Id);
+                Snackbar.Add("Supplier deleted successfully", Severity.Success);
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+}
