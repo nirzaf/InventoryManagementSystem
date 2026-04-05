@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: inventory-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-InventoryDB}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-inventory123}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inventory-app
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - DISABLE_HTTPS=true
+      - ConnectionStrings__DefaultConnection=Host=db;Database=${DB_NAME:-InventoryDB};Username=${DB_USER:-postgres};Password=${DB_PASSWORD:-inventory123}
+      - AdminSettings__Email=${ADMIN_EMAIL:-admin@inventory.com}
+      - AdminSettings__Password=${ADMIN_PASSWORD:-Admin@123}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+    driver: local
