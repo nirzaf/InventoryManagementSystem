@@ -1,0 +1,17 @@
+**/bin
+**/obj
+**/.vs
+**/.vscode
+**/.idea
+**/.git
+**/.github
+**/logs
+**/*.user
+**/packages
+**/TestResults
+**/*.md
+**/*.log
+InventoryManagementSystem/
+Crystal Reports Backup Files/
+DatabaseQuery/
+!README.md

@@ -52,6 +52,7 @@ appsettings.Development.json
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # User secrets
 secrets.json
@@ -78,3 +79,4 @@ coverage.opencover.xml
 
 # dotnet tools
 .tool
+.commandcode/

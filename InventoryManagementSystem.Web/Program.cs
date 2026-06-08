@@ -92,10 +92,19 @@ public class Program
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Home/Error");
-            app.UseHsts();
+
+            // HSTS only when HTTPS is enabled (skip in Docker/reverse-proxy setups)
+            if (string.IsNullOrEmpty(builder.Configuration["DISABLE_HTTPS"]))
+            {
+                app.UseHsts();
+            }
         }
 
-        app.UseHttpsRedirection();
+        // Skip HTTPS redirection in Docker or reverse-proxy deployments
+        if (string.IsNullOrEmpty(builder.Configuration["DISABLE_HTTPS"]))
+        {
+            app.UseHttpsRedirection();
+        }
         app.UseStaticFiles();
         app.UseSerilogRequestLogging();
 
@@ -137,6 +146,14 @@ public class Program
         })
             .WithName("ReceiveStock")
             .WithTags("Stock");
+
+        // Auto-apply EF Core migrations (skip in Testing)
+        if (!app.Environment.IsEnvironment("Testing"))
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+            await db.Database.MigrateAsync();
+        }
 
         // Seed demo data in development only
         if (app.Environment.IsDevelopment())
