@@ -194,15 +194,18 @@ public class PurchaseOrderServiceTests
             .ReturnsAsync(agentDraft);
 
         var details = itemIds.Select(id => new OrderDetail { ItemId = id, Quantity = 10, UnitPrice = 5.00m }).ToList();
+        var generated = await _agenticClientMock.Object.DraftSupplierCorrespondenceAsync(supplierId, itemIds);
+
         var draftPo = _fixture.Build<PurchaseOrder>()
             .With(p => p.SupplierId, supplierId)
-            .With(p => p.Notes, $"{agentDraft.Subject}\n{agentDraft.Body}")
+            .With(p => p.Notes, $"{generated.Subject}\n{generated.Body}")
+            .With(p => p.OrderDetails, new List<OrderDetail>())
+            .With(p => p.Status, "Draft")
             .Create();
         _poRepoMock.Setup(r => r.AddAsync(It.IsAny<PurchaseOrder>()))
             .ReturnsAsync((PurchaseOrder p) => p);
 
         // Act
-        var generated = await _agenticClientMock.Object.DraftSupplierCorrespondenceAsync(supplierId, itemIds);
         var result = await _sut.CreateAsync(draftPo, details);
         result.Status = "Draft";
         await _poRepoMock.Object.AddAsync(result);

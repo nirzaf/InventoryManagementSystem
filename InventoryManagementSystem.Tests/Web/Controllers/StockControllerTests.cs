@@ -4,7 +4,9 @@ using InventoryManagementSystem.Core.Entities;
 using InventoryManagementSystem.Core.Interfaces;
 using InventoryManagementSystem.Tests.Common;
 using InventoryManagementSystem.Web.Controllers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Moq;
 
 namespace InventoryManagementSystem.Tests.Web.Controllers;
@@ -23,6 +25,11 @@ public class StockControllerTests
             _stockServiceMock.Object,
             _itemServiceMock.Object,
             _locationServiceMock.Object);
+
+        var httpContext = new DefaultHttpContext();
+        var tempDataProvider = new Mock<ITempDataProvider>();
+        _sut.ControllerContext = new ControllerContext { HttpContext = httpContext };
+        _sut.TempData = new TempDataDictionary(httpContext, tempDataProvider.Object);
     }
 
     [Fact]
@@ -56,8 +63,8 @@ public class StockControllerTests
 
         // Assert
         result.Should().BeOfType<ViewResult>();
-        _sut.ViewBag.Items.Should().BeEquivalentTo(items);
-        _sut.ViewBag.Locations.Should().BeEquivalentTo(locations);
+        ((IEnumerable<Item>)_sut.ViewBag.Items!).Should().BeEquivalentTo(items);
+        ((IEnumerable<Location>)_sut.ViewBag.Locations!).Should().BeEquivalentTo(locations);
     }
 
     [Fact]

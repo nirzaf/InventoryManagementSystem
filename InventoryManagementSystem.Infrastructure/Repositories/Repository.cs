@@ -26,9 +26,18 @@ public class Repository<T> : IRepository<T> where T : class
         return await _dbSet.AsNoTracking().ToListAsync();
     }
 
-    public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+    public virtual Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
     {
-        return await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
+        return FindAsync(predicate, null);
+    }
+
+    public virtual async Task<IEnumerable<T>> FindAsync(
+        Expression<Func<T, bool>> predicate,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy)
+    {
+        var query = _dbSet.AsNoTracking().Where(predicate);
+        if (orderBy != null) query = orderBy(query);
+        return await query.ToListAsync();
     }
 
     public virtual async Task<IEnumerable<T>> GetPagedAsync(int page, int pageSize)

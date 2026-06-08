@@ -58,6 +58,9 @@ public class Program
         // Repositories
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
+        // Unit of Work — single commit boundary for multi-repository operations
+        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
         // Services
         builder.Services.AddScoped<IItemService, ItemService>();
         builder.Services.AddScoped<ISupplierService, SupplierService>();

@@ -9,17 +9,20 @@ public class StockService : IStockService
     private readonly IRepository<StockInHand> _stockRepo;
     private readonly IRepository<StockTransaction> _txRepo;
     private readonly IRepository<Item> _itemRepo;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<StockService> _logger;
 
     public StockService(
         IRepository<StockInHand> stockRepo,
         IRepository<StockTransaction> txRepo,
         IRepository<Item> itemRepo,
+        IUnitOfWork unitOfWork,
         ILogger<StockService> logger)
     {
         _stockRepo = stockRepo;
         _txRepo = txRepo;
         _itemRepo = itemRepo;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -33,11 +36,11 @@ public class StockService : IStockService
 
     public async Task<IEnumerable<StockTransaction>> GetTransactionsAsync(DateTime? from, DateTime? to)
     {
-        var all = await _txRepo.GetAllAsync();
-        var query = all.AsEnumerable();
-        if (from.HasValue) query = query.Where(t => t.TransactionDate >= from.Value);
-        if (to.HasValue) query = query.Where(t => t.TransactionDate <= to.Value);
-        return query.OrderByDescending(t => t.TransactionDate);
+        // Single composite predicate — fully executed on the database, zero in-memory filtering
+        return await _txRepo.FindAsync(t =>
+            (!from.HasValue || t.TransactionDate >= from.Value) &&
+            (!to.HasValue || t.TransactionDate <= to.Value),
+            orderBy: q => q.OrderByDescending(t => t.TransactionDate));
     }
 
     public async Task ReceiveStockAsync(int itemId, int locationId, int quantity, string? notes)
@@ -70,6 +73,9 @@ public class StockService : IStockService
             TransactionDate = DateTime.UtcNow,
             Notes = notes
         });
+
+        // Single commit for atomicity
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Received {Qty} of item {ItemId} at location {LocId}", quantity, itemId, locationId);
     }
@@ -113,6 +119,9 @@ public class StockService : IStockService
             Notes = notes
         });
 
+        // Single commit for atomicity
+        await _unitOfWork.SaveChangesAsync();
+
         _logger.LogInformation("Transferred {Qty} of item {ItemId} from {From} to {To}", quantity, itemId, fromLocationId, toLocationId);
     }
 
@@ -136,6 +145,9 @@ public class StockService : IStockService
             TransactionDate = DateTime.UtcNow,
             Notes = notes
         });
+
+        // Single commit for atomicity
+        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Sold {Qty} of item {ItemId} from location {LocId}", quantity, itemId, locationId);
     }
