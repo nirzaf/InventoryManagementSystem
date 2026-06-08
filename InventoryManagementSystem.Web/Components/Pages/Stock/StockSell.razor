@@ -1,0 +1,84 @@
+@page "/Stock/Sell"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IStockService StockService
+@inject IItemService ItemService
+@inject ILocationService LocationService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Sell Stock</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Sell Stock</MudText>
+<MudDivider Class="mb-4" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudForm @ref="_form" @bind-IsValid="@_success">
+                <MudSelect T="int" @bind-Value="_itemId" Label="Item" AnchorOrigin="Origin.BottomCenter" Required="true" RequiredError="Item is required." Class="mb-3">
+                    <MudSelectItem T="int" Value="0">-- Select Item --</MudSelectItem>
+                    @foreach (var item in _items)
+                    {
+                        <MudSelectItem T="int" Value="@item.Id">@item.ItemCode - @item.Description</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect T="int" @bind-Value="_locationId" Label="Location" AnchorOrigin="Origin.BottomCenter" Required="true" RequiredError="Location is required." Class="mb-3">
+                    <MudSelectItem T="int" Value="0">-- Select Location --</MudSelectItem>
+                    @foreach (var loc in _locations)
+                    {
+                        <MudSelectItem T="int" Value="@loc.Id">@loc.Name</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudNumericField @bind-Value="_quantity" Label="Quantity" Min="1" Required="true" RequiredError="Quantity must be at least 1." Class="mb-3" />
+                <MudTextField @bind-Value="_notes" Label="Notes" Lines="2" Class="mb-3" />
+
+                <div class="d-flex gap-2 mt-4">
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="SubmitForm">Sell Stock</MudButton>
+                    <MudButton Href="/Stock/Index" Variant="Variant.Outlined" Color="Color.Secondary">Cancel</MudButton>
+                </div>
+            </MudForm>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private MudForm? _form;
+    private bool _success;
+
+    private int _itemId;
+    private int _locationId;
+    private int _quantity = 1;
+    private string? _notes;
+
+    private IEnumerable<Item> _items = new List<Item>();
+    private IEnumerable<Location> _locations = new List<Location>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _items = await ItemService.GetAllAsync();
+        _locations = await LocationService.GetAllAsync();
+    }
+
+    private async Task SubmitForm()
+    {
+        await _form!.ValidateAsync();
+        if (_form.IsValid && _itemId > 0 && _locationId > 0)
+        {
+            try
+            {
+                await StockService.SellStockAsync(_itemId, _locationId, _quantity, _notes);
+                Snackbar.Add($"Sold {_quantity} units successfully.", Severity.Success);
+                Nav.NavigateTo("/Stock/Index");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+        else if (_itemId == 0) Snackbar.Add("Please select an item.", Severity.Warning);
+        else if (_locationId == 0) Snackbar.Add("Please select a location.", Severity.Warning);
+    }
+}

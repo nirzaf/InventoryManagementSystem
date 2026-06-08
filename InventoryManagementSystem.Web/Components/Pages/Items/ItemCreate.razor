@@ -1,0 +1,61 @@
+@page "/Items/Create"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IItemService ItemService
+@inject ISupplierService SupplierService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Create Item</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Create Item</MudText>
+<MudDivider Class="mb-4" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="1" Class="pa-4">
+            <EditForm Model="@_item" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <MudTextField @bind-Value="_item.ItemCode" Label="Item Code" Required="true" For="@(() => _item.ItemCode)" Class="mb-3" />
+                <MudTextField @bind-Value="_item.Description" Label="Description" Required="true" For="@(() => _item.Description)" Class="mb-3" />
+                <MudNumericField @bind-Value="_item.Rate" Label="Rate" Format="N2" Required="true" For="@(() => _item.Rate)" Class="mb-3" />
+                <MudSelect T="int?" @bind-Value="_item.SupplierId" Label="Supplier" AnchorOrigin="Origin.BottomCenter" Class="mb-3">
+                    <MudSelectItem T="int?" Value="null">-- Select Supplier --</MudSelectItem>
+                    @foreach (var supplier in _suppliers)
+                    {
+                        <MudSelectItem T="int?" Value="(int?)supplier.Id">@supplier.Name</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <div class="d-flex gap-2 mt-4">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Create</MudButton>
+                    <MudButton Href="/Items" Variant="Variant.Outlined" Color="Color.Secondary">Cancel</MudButton>
+                </div>
+            </EditForm>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private Item _item = new();
+    private IEnumerable<Supplier> _suppliers = new List<Supplier>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _suppliers = await SupplierService.GetAllAsync();
+    }
+
+    private async Task OnValidSubmit()
+    {
+        try
+        {
+            await ItemService.CreateAsync(_item);
+            Snackbar.Add("Item created successfully", Severity.Success);
+            Nav.NavigateTo("/Items");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

@@ -1,0 +1,103 @@
+@page "/PurchaseOrders"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IPurchaseOrderService POService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Purchase Orders</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h4" Color="Color.Primary">Purchase Orders</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/PurchaseOrders/Create">New Purchase Order</MudButton>
+</div>
+
+<MudTable Items="@_orders" Dense="true" Hover="true" Striped="true" Filter="new Func<PurchaseOrder,bool>(FilterFunc)">
+    <ToolBarContent>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrder, object>(x=>x.PONumber)">PO Number</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrder, object>(x=>x.OrderDate)">Date</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrder, object>(x=>x.Supplier?.Name ?? string.Empty)">Supplier</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<PurchaseOrder, object>(x=>x.Status)">Status</MudTableSortLabel></MudTh>
+        <MudTh Style="text-align:right"><MudTableSortLabel SortBy="new Func<PurchaseOrder, object>(x=>x.TotalAmount)">Total</MudTableSortLabel></MudTh>
+        <MudTh Style="text-align:right">Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="PO Number">@context.PONumber</MudTd>
+        <MudTd DataLabel="Date">@context.OrderDate.ToString("yyyy-MM-dd")</MudTd>
+        <MudTd DataLabel="Supplier">@context.Supplier?.Name</MudTd>
+        <MudTd DataLabel="Status">
+            <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status.ToString()</MudChip>
+        </MudTd>
+        <MudTd DataLabel="Total" Style="text-align:right">@context.TotalAmount.ToString("C")</MudTd>
+        <MudTd DataLabel="Actions" Style="text-align:right">
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info" Href="@($"/PurchaseOrders/Details/{context.Id}")" Class="mr-2">Details</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => DeletePO(context))">Delete</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IEnumerable<PurchaseOrder> _orders = new List<PurchaseOrder>();
+    private string _searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _orders = await POService.GetAllAsync();
+    }
+
+    private Color GetStatusColor(PurchaseOrderStatus status)
+    {
+        return status switch
+        {
+            PurchaseOrderStatus.Pending => Color.Warning,
+            PurchaseOrderStatus.Approved => Color.Success,
+            PurchaseOrderStatus.Received => Color.Info,
+            PurchaseOrderStatus.Cancelled => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private bool FilterFunc(PurchaseOrder element) => FilterFunc(element, _searchString);
+
+    private bool FilterFunc(PurchaseOrder element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+        if (element.PONumber.Contains(searchString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (element.Supplier?.Name?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true) return true;
+        return false;
+    }
+
+    private async Task DeletePO(PurchaseOrder po)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Warning", 
+            $"Are you sure you want to delete {po.PONumber}?", 
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            try
+            {
+                await POService.DeleteAsync(po.Id);
+                Snackbar.Add("Purchase Order deleted successfully", Severity.Success);
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+}

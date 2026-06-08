@@ -1,0 +1,94 @@
+@page "/Items"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject IItemService ItemService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager Nav
+
+<PageTitle>Items</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h4" Color="Color.Primary">Items</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/Items/Create">Add New Item</MudButton>
+</div>
+
+<MudTable Items="@_items" Dense="true" Hover="true" Striped="true" Filter="new Func<Item,bool>(FilterFunc)">
+    <ToolBarContent>
+        <MudSpacer />
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.ItemCode)">Item Code</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Description)">Description</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Rate)">Rate</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Supplier?.Name ?? string.Empty)">Supplier</MudTableSortLabel></MudTh>
+        <MudTh Style="text-align:right">Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Item Code">@context.ItemCode</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Rate">@context.Rate.ToString("C")</MudTd>
+        <MudTd DataLabel="Supplier">@context.Supplier?.Name</MudTd>
+        <MudTd DataLabel="Actions" Style="text-align:right">
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info" Href="@($"/Items/Details/{context.Id}")" Class="mr-2">Details</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning" Href="@($"/Items/Edit/{context.Id}")" Class="mr-2">Edit</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => DeleteItem(context))">Delete</MudButton>
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private IEnumerable<Item> _items = new List<Item>();
+    private string _searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _items = await ItemService.GetAllAsync();
+    }
+
+    private bool FilterFunc(Item element) => FilterFunc(element, _searchString);
+
+    private bool FilterFunc(Item element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.ItemCode.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Description.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Supplier?.Name?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        return false;
+    }
+
+    private async Task DeleteItem(Item item)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Warning", 
+            $"Are you sure you want to delete {item.ItemCode}?", 
+            yesText: "Delete!", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            try
+            {
+                await ItemService.DeleteAsync(item.Id);
+                Snackbar.Add("Item deleted successfully", Severity.Success);
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+}

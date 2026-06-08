@@ -1,0 +1,15 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  InventoryManagementSystem.Core -> /Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Core/bin/Debug/net10.0/InventoryManagementSystem.Core.dll
+  InventoryManagementSystem.Infrastructure -> /Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Infrastructure/bin/Debug/net10.0/InventoryManagementSystem.Infrastructure.dll
+/Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Web/obj/Debug/net10.0/Microsoft.CodeAnalysis.Razor.Compiler/Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator/Components/Pages/PurchaseOrders/PoCreate_razor.g.cs(470,354): error CS1503: Argument 2: cannot convert from 'Microsoft.AspNetCore.Components.EventCallback<int>' to 'Microsoft.AspNetCore.Components.EventCallback' [/Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Web/InventoryManagementSystem.Web.csproj]
+/Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Web/obj/Debug/net10.0/Microsoft.CodeAnalysis.Razor.Compiler/Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator/Components/Pages/PurchaseOrders/PoCreate_razor.g.cs(293,198): error CS1662: Cannot convert lambda expression to intended delegate type because some of the return types in the block are not implicitly convertible to the delegate return type [/Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Web/InventoryManagementSystem.Web.csproj]
+
+Build FAILED.
+
+/Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Web/obj/Debug/net10.0/Microsoft.CodeAnalysis.Razor.Compiler/Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator/Components/Pages/PurchaseOrders/PoCreate_razor.g.cs(470,354): error CS1503: Argument 2: cannot convert from 'Microsoft.AspNetCore.Components.EventCallback<int>' to 'Microsoft.AspNetCore.Components.EventCallback' [/Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Web/InventoryManagementSystem.Web.csproj]
+/Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Web/obj/Debug/net10.0/Microsoft.CodeAnalysis.Razor.Compiler/Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator/Components/Pages/PurchaseOrders/PoCreate_razor.g.cs(293,198): error CS1662: Cannot convert lambda expression to intended delegate type because some of the return types in the block are not implicitly convertible to the delegate return type [/Users/qts/Repos/InventoryManagementSystem/InventoryManagementSystem.Web/InventoryManagementSystem.Web.csproj]
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:01.28

@@ -1,0 +1,46 @@
+@page "/Locations/Create"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ILocationService LocationService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Create Location</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Create Location</MudText>
+<MudDivider Class="mb-4" />
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="1" Class="pa-4">
+            <EditForm Model="@_location" OnValidSubmit="OnValidSubmit">
+                <DataAnnotationsValidator />
+                <MudTextField @bind-Value="_location.Name" Label="Name" Required="true" For="@(() => _location.Name)" Class="mb-3" />
+                <MudTextField @bind-Value="_location.Address" Label="Address" Lines="3" For="@(() => _location.Address)" Class="mb-3" />
+
+                <div class="d-flex gap-2 mt-4">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Create</MudButton>
+                    <MudButton Href="/Locations" Variant="Variant.Outlined" Color="Color.Secondary">Cancel</MudButton>
+                </div>
+            </EditForm>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private Location _location = new();
+
+    private async Task OnValidSubmit()
+    {
+        try
+        {
+            await LocationService.CreateAsync(_location);
+            Snackbar.Add("Location created successfully", Severity.Success);
+            Nav.NavigateTo("/Locations");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+}

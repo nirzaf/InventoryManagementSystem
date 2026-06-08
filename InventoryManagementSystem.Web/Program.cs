@@ -76,9 +76,11 @@ public class Program
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(InventoryManagementSystem.Core.Features.Items.Queries.GetAllItemsQuery).Assembly));
 
-        // MVC
+        // MVC & Blazor
         builder.Services.AddControllersWithViews();
         builder.Services.AddRazorPages();
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
 
         // API Versioning
         builder.Services.AddApiVersioning(options =>
@@ -127,6 +129,8 @@ public class Program
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
         app.MapRazorPages();
+        app.MapRazorComponents<Components.App>()
+            .AddInteractiveServerRenderMode();
         app.MapHealthChecks("/health");
 
         // === Headless API v1 (MediatR-powered minimal endpoints) ===

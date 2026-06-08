@@ -1,0 +1,64 @@
+@page "/Locations/Edit/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ILocationService LocationService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>Edit Location</PageTitle>
+
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-3">Edit Location</MudText>
+<MudDivider Class="mb-4" />
+
+@if (_location == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="1" Class="pa-4">
+                <EditForm Model="@_location" OnValidSubmit="OnValidSubmit">
+                    <DataAnnotationsValidator />
+                    <MudTextField @bind-Value="_location.Name" Label="Name" Required="true" For="@(() => _location.Name)" Class="mb-3" />
+                    <MudTextField @bind-Value="_location.Address" Label="Address" Lines="3" For="@(() => _location.Address)" Class="mb-3" />
+
+                    <div class="d-flex gap-2 mt-4">
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save Changes</MudButton>
+                        <MudButton Href="/Locations" Variant="Variant.Outlined" Color="Color.Secondary">Cancel</MudButton>
+                    </div>
+                </EditForm>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Location? _location;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _location = await LocationService.GetByIdAsync(Id);
+    }
+
+    private async Task OnValidSubmit()
+    {
+        if (_location != null)
+        {
+            try
+            {
+                await LocationService.UpdateAsync(_location);
+                Snackbar.Add("Location updated successfully", Severity.Success);
+                Nav.NavigateTo("/Locations");
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Error);
+            }
+        }
+    }
+}
