@@ -12,6 +12,4 @@
 **/*.md
 **/*.log
 InventoryManagementSystem/
-Crystal Reports Backup Files/
-DatabaseQuery/
 !README.md
