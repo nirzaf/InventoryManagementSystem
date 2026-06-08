@@ -2,61 +2,57 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<h2>Dashboard</h2>
-<hr />
+<MudText Typo="Typo.h4" Color="Color.Primary" Class="mb-4">Dashboard</MudText>
+<MudDivider Class="mb-4" />
 
-<div class="row">
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body text-center">
-                <h5 class="card-title">Total Items</h5>
-                <h2>@ViewBag.ItemCount</h2>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-success">
-            <div class="card-body text-center">
-                <h5 class="card-title">Purchase Orders</h5>
-                <h2>@ViewBag.POCount</h2>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4 mb-3">
-        <div class="card text-white bg-info">
-            <div class="card-body text-center">
-                <h5 class="card-title">Units in Stock</h5>
-                <h2>@ViewBag.StockItems</h2>
-            </div>
-        </div>
-    </div>
-</div>
+<MudGrid>
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Total Items</MudText>
+            <MudText Typo="Typo.h3" Color="Color.Primary">@ViewBag.ItemCount</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Purchase Orders</MudText>
+            <MudText Typo="Typo.h3" Color="Color.Success">@ViewBag.POCount</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Units in Stock</MudText>
+            <MudText Typo="Typo.h3" Color="Color.Info">@ViewBag.StockItems</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header fw-bold">Quick Actions</div>
-            <div class="card-body">
+<MudGrid Class="mt-4">
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="1">
+            <MudText Typo="Typo.subtitle1" Class="pa-3 mud-theme-secondary">Quick Actions</MudText>
+            <MudDivider />
+            <div class="pa-3">
                 <div class="d-grid gap-2">
-                    <a asp-controller="Items" asp-action="Create" class="btn btn-outline-primary">Add New Item</a>
-                    <a asp-controller="Stock" asp-action="Receive" class="btn btn-outline-success">Receive Stock</a>
-                    <a asp-controller="Suppliers" asp-action="Create" class="btn btn-outline-info">Add New Supplier</a>
+                    <a asp-controller="Items" asp-action="Create" class="mud-button mud-button-outlined mud-button-outlined-primary mud-width-full">Add New Item</a>
+                    <a asp-controller="Stock" asp-action="Receive" class="mud-button mud-button-outlined mud-button-outlined-success mud-width-full">Receive Stock</a>
+                    <a asp-controller="Suppliers" asp-action="Create" class="mud-button mud-button-outlined mud-button-outlined-info mud-width-full">Add New Supplier</a>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header fw-bold">Navigation</div>
-            <div class="card-body">
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="1">
+            <MudText Typo="Typo.subtitle1" Class="pa-3 mud-theme-secondary">Navigation</MudText>
+            <MudDivider />
+            <div class="pa-3">
                 <div class="d-grid gap-2">
-                    <a asp-controller="Items" asp-action="Index" class="btn btn-outline-secondary">Manage Items</a>
-                    <a asp-controller="Stock" asp-action="Index" class="btn btn-outline-secondary">View Stock</a>
-                    <a asp-controller="PurchaseOrders" asp-action="Index" class="btn btn-outline-secondary">Purchase Orders</a>
-                    <a asp-controller="Suppliers" asp-action="Index" class="btn btn-outline-secondary">Manage Suppliers</a>
-                    <a asp-controller="Locations" asp-action="Index" class="btn btn-outline-secondary">Manage Locations</a>
+                    <a asp-controller="Items" asp-action="Index" class="mud-button mud-button-outlined mud-button-outlined-secondary mud-width-full">Manage Items</a>
+                    <a asp-controller="Stock" asp-action="Index" class="mud-button mud-button-outlined mud-button-outlined-secondary mud-width-full">View Stock</a>
+                    <a asp-controller="PurchaseOrders" asp-action="Index" class="mud-button mud-button-outlined mud-button-outlined-secondary mud-width-full">Purchase Orders</a>
+                    <a asp-controller="Suppliers" asp-action="Index" class="mud-button mud-button-outlined mud-button-outlined-secondary mud-width-full">Manage Suppliers</a>
+                    <a asp-controller="Locations" asp-action="Index" class="mud-button mud-button-outlined mud-button-outlined-secondary mud-width-full">Manage Locations</a>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>

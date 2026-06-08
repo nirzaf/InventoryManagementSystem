@@ -156,7 +156,7 @@ public class ItemsControllerTests
 
         // Assert
         result.Should().BeOfType<ViewResult>();
-        _sut.ViewBag.Suppliers.Should().BeEquivalentTo(suppliers);
+        ((IEnumerable<Supplier>)_sut.ViewBag.Suppliers!).Should().BeEquivalentTo(suppliers);
     }
 
     [Fact]

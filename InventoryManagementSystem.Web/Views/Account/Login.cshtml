@@ -2,39 +2,36 @@
     ViewData["Title"] = "Login";
     Layout = "_SimpleLayout";
 }
-<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
-<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
 
-<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card shadow" style="width: 24rem;">
-        <div class="card-body p-4">
-            <h3 class="text-center mb-4">Inventory Management</h3>
-            <h5 class="text-center text-muted mb-4">Sign In</h5>
+<div style="display:flex; justify-content:center; align-items:center; min-height:80vh;">
+    <MudPaper Elevation="3" Class="pa-8" Style="max-width:400px; width:100%;">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-2">Inventory Management</MudText>
+        <MudText Typo="Typo.h6" Align="Align.Center" Color="Color.Secondary" Class="mb-6">Sign In</MudText>
 
-            @if (!ViewContext.ModelState.IsValid)
-            {
-                <div class="alert alert-danger">
-                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        <div>@error.ErrorMessage</div>
-                    }
-                </div>
-            }
+        @if (!ViewContext.ModelState.IsValid)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4" Dense="true">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <div>@error.ErrorMessage</div>
+                }
+            </MudAlert>
+        }
 
-            <form method="post" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" name="email" id="email" class="form-control" required
-                           placeholder="admin@inventory.com" />
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" name="password" id="password" class="form-control" required
-                           placeholder="Enter your password" />
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Sign In</button>
-            </form>
-
-        </div>
-    </div>
+        <form method="post" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+            <div class="mb-3">
+                <label class="mud-input-label mud-input-label-text">Email</label>
+                <input type="email" name="email" class="mud-input mud-input-outlined mud-input-text"
+                       required placeholder="admin@inventory.com" style="width:100%; padding:12px;" />
+            </div>
+            <div class="mb-4">
+                <label class="mud-input-label mud-input-label-text">Password</label>
+                <input type="password" name="password" class="mud-input mud-input-outlined mud-input-text"
+                       required placeholder="Enter your password" style="width:100%; padding:12px;" />
+            </div>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                Sign In
+            </MudButton>
+        </form>
+    </MudPaper>
 </div>
