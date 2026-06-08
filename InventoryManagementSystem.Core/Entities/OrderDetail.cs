@@ -1,6 +1,6 @@
 namespace InventoryManagementSystem.Core.Entities;
 
-public class OrderDetail
+public class OrderDetail : AuditableEntity
 {
     public int Id { get; set; }
     public int PurchaseOrderId { get; set; }

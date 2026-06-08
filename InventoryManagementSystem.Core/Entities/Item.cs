@@ -1,6 +1,6 @@
 namespace InventoryManagementSystem.Core.Entities;
 
-public class Item
+public class Item : AuditableEntity
 {
     public int Id { get; set; }
     public string ItemCode { get; set; } = string.Empty;

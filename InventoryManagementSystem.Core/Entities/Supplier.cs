@@ -1,6 +1,6 @@
 namespace InventoryManagementSystem.Core.Entities;
 
-public class Supplier
+public class Supplier : AuditableEntity
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;

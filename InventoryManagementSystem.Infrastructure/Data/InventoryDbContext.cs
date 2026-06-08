@@ -1,13 +1,20 @@
 using InventoryManagementSystem.Core.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace InventoryManagementSystem.Infrastructure.Data;
 
 public class InventoryDbContext : IdentityDbContext<ApplicationUser>
 {
-    public InventoryDbContext(DbContextOptions<InventoryDbContext> options) : base(options)
+    private readonly IHttpContextAccessor? _httpContextAccessor;
+
+    public InventoryDbContext(
+        DbContextOptions<InventoryDbContext> options,
+        IHttpContextAccessor? httpContextAccessor = null) : base(options)
     {
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public DbSet<Item> Items { get; set; } = null!;
@@ -17,6 +24,29 @@ public class InventoryDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<PurchaseOrder> PurchaseOrders { get; set; } = null!;
     public DbSet<OrderDetail> OrderDetails { get; set; } = null!;
     public DbSet<StockTransaction> StockTransactions { get; set; } = null!;
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var currentUser = _httpContextAccessor?.HttpContext?.User?.Identity?.Name ?? "System";
+        var utcNow = DateTime.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Entity.CreatedAt = utcNow;
+                    entry.Entity.CreatedBy = currentUser;
+                    break;
+                case EntityState.Modified:
+                    entry.Entity.UpdatedAt = utcNow;
+                    entry.Entity.UpdatedBy = currentUser;
+                    break;
+            }
+        }
+
+        return await base.SaveChangesAsync(cancellationToken);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

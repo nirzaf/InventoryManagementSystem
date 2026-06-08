@@ -1,6 +1,6 @@
 namespace InventoryManagementSystem.Core.Entities;
 
-public class PurchaseOrder
+public class PurchaseOrder : AuditableEntity
 {
     public int Id { get; set; }
     public string PONumber { get; set; } = string.Empty;

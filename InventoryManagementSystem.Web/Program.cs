@@ -58,6 +58,9 @@ public class Program
         // MudBlazor
         builder.Services.AddMudServices();
 
+        // HTTP context accessor for audit fields
+        builder.Services.AddHttpContextAccessor();
+
         // Repositories
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 

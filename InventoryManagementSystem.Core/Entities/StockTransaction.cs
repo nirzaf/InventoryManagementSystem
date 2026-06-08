@@ -1,6 +1,6 @@
 namespace InventoryManagementSystem.Core.Entities;
 
-public class StockTransaction
+public class StockTransaction : AuditableEntity
 {
     public int Id { get; set; }
     public int ItemId { get; set; }
