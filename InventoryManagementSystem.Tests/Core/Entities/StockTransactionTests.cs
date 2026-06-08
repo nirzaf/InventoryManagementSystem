@@ -1,12 +1,13 @@
 using AutoFixture;
 using FluentAssertions;
 using InventoryManagementSystem.Core.Entities;
+using InventoryManagementSystem.Tests.Common;
 
 namespace InventoryManagementSystem.Tests.Core.Entities;
 
 public class StockTransactionTests
 {
-    private readonly Fixture _fixture = new();
+    private readonly Fixture _fixture = InventoryFixtureFactory.Create();
 
     [Theory]
     [InlineData(0)]
@@ -38,66 +39,30 @@ public class StockTransactionTests
         // Arrange
         var item = _fixture.Create<Item>();
         var location = _fixture.Create<Location>();
-        var stockBalance = new StockInHand
-        {
-            ItemId = item.Id,
-            Item = item,
-            LocationId = location.Id,
-            Location = location,
-            Quantity = 50
-        };
+        var stockBalance = _fixture.Build<StockInHand>()
+            .With(s => s.Quantity, 50)
+            .Create();
 
         var sellQuantity = 10;
-        var sellTransaction = new StockTransaction
-        {
-            ItemId = item.Id,
-            Item = item,
-            FromLocationId = location.Id,
-            FromLocation = location,
-            Quantity = sellQuantity,
-            TransactionType = "Sell",
-            TransactionDate = DateTime.UtcNow
-        };
 
         // Act
-        stockBalance.Quantity -= sellTransaction.Quantity;
+        stockBalance.Quantity -= sellQuantity;
 
         // Assert
         stockBalance.Quantity.Should().Be(40);
-        sellTransaction.Quantity.Should().BePositive();
     }
 
     [Fact]
     public void StockTransaction_WhenInboundAppliedToStockInHand_IncrementsBalance()
     {
         // Arrange
-        var item = _fixture.Create<Item>();
-        var location = _fixture.Create<Location>();
-        var stockBalance = new StockInHand
-        {
-            ItemId = item.Id,
-            Item = item,
-            LocationId = location.Id,
-            Location = location,
-            Quantity = 20
-        };
-
+        var stockBalance = _fixture.Build<StockInHand>()
+            .With(s => s.Quantity, 20)
+            .Create();
         var receiveQuantity = 30;
-        var receiveTransaction = new StockTransaction
-        {
-            ItemId = item.Id,
-            Item = item,
-            FromLocationId = location.Id,
-            FromLocation = location,
-            ToLocationId = location.Id,
-            ToLocation = location,
-            Quantity = receiveQuantity,
-            TransactionType = "Receive",
-            TransactionDate = DateTime.UtcNow
-        };
 
         // Act
-        stockBalance.Quantity += receiveTransaction.Quantity;
+        stockBalance.Quantity += receiveQuantity;
 
         // Assert
         stockBalance.Quantity.Should().Be(50);
@@ -132,18 +97,18 @@ public class StockTransactionTests
     }
 
     [Theory]
-    [InlineData("Receive", "ToLocationId", 1)]
-    [InlineData("Transfer", "ToLocationId", 2)]
-    [InlineData("Sell", "ToLocationId", null)]
+    [InlineData("Receive", 1)]
+    [InlineData("Transfer", 2)]
+    [InlineData("Sell", null)]
     public void StockTransaction_WhenTypeChanges_DestinationSemanticsDiffer(
-        string transactionType, string expectedField, int? expectedValue)
+        string transactionType, int? expectedToLocationId)
     {
         // Arrange
         var transaction = new StockTransaction
         {
             ItemId = _fixture.Create<int>(),
             FromLocationId = 1,
-            ToLocationId = expectedValue,
+            ToLocationId = expectedToLocationId,
             Quantity = 10,
             TransactionType = transactionType,
             TransactionDate = DateTime.UtcNow
@@ -153,7 +118,7 @@ public class StockTransactionTests
         var actualToLocationId = transaction.ToLocationId;
 
         // Assert
-        actualToLocationId.Should().Be(expectedValue);
+        actualToLocationId.Should().Be(expectedToLocationId);
         transaction.TransactionType.Should().Be(transactionType);
     }
 }

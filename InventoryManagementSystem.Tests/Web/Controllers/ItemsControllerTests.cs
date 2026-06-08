@@ -2,6 +2,7 @@ using AutoFixture;
 using FluentAssertions;
 using InventoryManagementSystem.Core.Entities;
 using InventoryManagementSystem.Core.Interfaces;
+using InventoryManagementSystem.Tests.Common;
 using InventoryManagementSystem.Web.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -10,7 +11,7 @@ namespace InventoryManagementSystem.Tests.Web.Controllers;
 
 public class ItemsControllerTests
 {
-    private readonly Fixture _fixture = new();
+    private readonly Fixture _fixture = InventoryFixtureFactory.Create();
     private readonly Mock<IItemService> _itemServiceMock = new();
     private readonly Mock<ISupplierService> _supplierServiceMock = new();
     private readonly ItemsController _sut;

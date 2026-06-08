@@ -1,3 +1,7 @@
+using Asp.Versioning;
+using InventoryManagementSystem.Core.Features.Items.Queries;
+using InventoryManagementSystem.Core.Features.Stock.Commands;
+using InventoryManagementSystem.Core.Features.Stock.Queries;
 using InventoryManagementSystem.Core.Interfaces;
 using InventoryManagementSystem.Core.Services;
 using InventoryManagementSystem.Infrastructure.Data;
@@ -69,6 +73,17 @@ public class Program
         builder.Services.AddControllersWithViews();
         builder.Services.AddRazorPages();
 
+        // API Versioning
+        builder.Services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = ApiVersionReader.Combine(
+                new UrlSegmentApiVersionReader(),
+                new HeaderApiVersionReader("x-api-version"));
+        }).AddMvc();
+
         var app = builder.Build();
 
         if (!app.Environment.IsDevelopment())
@@ -91,27 +106,28 @@ public class Program
         app.MapRazorPages();
 
         // === Headless API v1 (MediatR-powered minimal endpoints) ===
-        var api = app.MapGroup("/api/v1");
+        var v1 = app.MapGroup("/api/v1")
+            .WithTags("API v1");
 
-        api.MapGet("/items", async (IMediator mediator) =>
-            Results.Ok(await mediator.Send(new InventoryManagementSystem.Core.Features.Items.Queries.GetAllItemsQuery())))
+        v1.MapGet("/items", async (IMediator mediator) =>
+            Results.Ok(await mediator.Send(new GetAllItemsQuery())))
             .WithName("GetAllItems")
             .WithTags("Items");
 
-        api.MapGet("/items/{id:int}", async (int id, IMediator mediator) =>
+        v1.MapGet("/items/{id:int}", async (int id, IMediator mediator) =>
         {
-            var item = await mediator.Send(new InventoryManagementSystem.Core.Features.Items.Queries.GetItemByIdQuery(id));
+            var item = await mediator.Send(new GetItemByIdQuery(id));
             return item is null ? Results.NotFound() : Results.Ok(item);
         })
             .WithName("GetItemById")
             .WithTags("Items");
 
-        api.MapGet("/stock", async (IMediator mediator) =>
-            Results.Ok(await mediator.Send(new InventoryManagementSystem.Core.Features.Stock.Queries.GetAllStockQuery())))
+        v1.MapGet("/stock", async (IMediator mediator) =>
+            Results.Ok(await mediator.Send(new GetAllStockQuery())))
             .WithName("GetAllStock")
             .WithTags("Stock");
 
-        api.MapPost("/stock/receive", async (InventoryManagementSystem.Core.Features.Stock.Commands.ReceiveStockCommand cmd, IMediator mediator) =>
+        v1.MapPost("/stock/receive", async (ReceiveStockCommand cmd, IMediator mediator) =>
         {
             await mediator.Send(cmd);
             return Results.NoContent();

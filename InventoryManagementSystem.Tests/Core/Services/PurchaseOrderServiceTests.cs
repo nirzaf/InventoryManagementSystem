@@ -3,6 +3,7 @@ using FluentAssertions;
 using InventoryManagementSystem.Core.Entities;
 using InventoryManagementSystem.Core.Interfaces;
 using InventoryManagementSystem.Core.Services;
+using InventoryManagementSystem.Tests.Common;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -10,7 +11,7 @@ namespace InventoryManagementSystem.Tests.Core.Services;
 
 public class PurchaseOrderServiceTests
 {
-    private readonly Fixture _fixture = new();
+    private readonly Fixture _fixture = InventoryFixtureFactory.Create();
     private readonly Mock<IRepository<PurchaseOrder>> _poRepoMock = new();
     private readonly Mock<IAgenticProcurementClient> _agenticClientMock = new();
     private readonly PurchaseOrderService _sut;
@@ -24,11 +25,9 @@ public class PurchaseOrderServiceTests
     public async Task CreatePurchaseOrderAsync_WhenDetailsAreValid_AddsPurchaseOrderWithPendingStatus()
     {
         // Arrange
-        var po = _fixture.Build<PurchaseOrder>()
-            .With(p => p.Status, (string?)null)
-            .With(p => p.TotalAmount, 0m)
-            .With(p => p.OrderDetails, new List<OrderDetail>())
-            .Create();
+        var po = _fixture.Create<PurchaseOrder>();
+        po.Status = null;
+        po.TotalAmount = 0m;
 
         var details = new List<OrderDetail>
         {
@@ -57,9 +56,7 @@ public class PurchaseOrderServiceTests
     public async Task CreatePurchaseOrderAsync_WhenCalled_InvokesAddAsyncExactlyOnce()
     {
         // Arrange
-        var po = _fixture.Build<PurchaseOrder>()
-            .With(p => p.OrderDetails, new List<OrderDetail>())
-            .Create();
+        var po = _fixture.Create<PurchaseOrder>();
         var details = new List<OrderDetail>
         {
             new() { ItemId = 1, Quantity = 1, UnitPrice = 1.00m }
@@ -78,10 +75,8 @@ public class PurchaseOrderServiceTests
     public async Task CreatePurchaseOrderAsync_WhenDetailsAreEmpty_SetsTotalAmountToZero()
     {
         // Arrange
-        var po = _fixture.Build<PurchaseOrder>()
-            .With(p => p.TotalAmount, 999m)
-            .With(p => p.OrderDetails, new List<OrderDetail>())
-            .Create();
+        var po = _fixture.Create<PurchaseOrder>();
+        po.TotalAmount = 999m;
         _poRepoMock.Setup(r => r.AddAsync(It.IsAny<PurchaseOrder>()))
             .ReturnsAsync((PurchaseOrder p) => p);
 
@@ -199,12 +194,10 @@ public class PurchaseOrderServiceTests
             .ReturnsAsync(agentDraft);
 
         var details = itemIds.Select(id => new OrderDetail { ItemId = id, Quantity = 10, UnitPrice = 5.00m }).ToList();
-        var draftPo = new PurchaseOrder
-        {
-            PONumber = $"PO-{DateTime.UtcNow:yyyyMMddHHmmssfff}",
-            SupplierId = supplierId,
-            Notes = $"{agentDraft.Subject}\n{agentDraft.Body}"
-        };
+        var draftPo = _fixture.Build<PurchaseOrder>()
+            .With(p => p.SupplierId, supplierId)
+            .With(p => p.Notes, $"{agentDraft.Subject}\n{agentDraft.Body}")
+            .Create();
         _poRepoMock.Setup(r => r.AddAsync(It.IsAny<PurchaseOrder>()))
             .ReturnsAsync((PurchaseOrder p) => p);
 

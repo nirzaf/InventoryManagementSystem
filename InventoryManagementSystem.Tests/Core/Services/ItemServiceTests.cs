@@ -1,8 +1,10 @@
+using System.Linq.Expressions;
 using AutoFixture;
 using FluentAssertions;
 using InventoryManagementSystem.Core.Entities;
 using InventoryManagementSystem.Core.Interfaces;
 using InventoryManagementSystem.Core.Services;
+using InventoryManagementSystem.Tests.Common;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -10,7 +12,7 @@ namespace InventoryManagementSystem.Tests.Core.Services;
 
 public class ItemServiceTests
 {
-    private readonly Fixture _fixture = new();
+    private readonly Fixture _fixture = InventoryFixtureFactory.Create();
     private readonly Mock<IRepository<Item>> _repoMock = new();
     private readonly ItemService _sut;
 
@@ -158,7 +160,7 @@ public class ItemServiceTests
         // Arrange
         var term = "WIDGET";
         var item = _fixture.Build<Item>().With(i => i.ItemCode, "WIDGET-001").Create();
-        _repoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Item, bool>>>()))
+        _repoMock.Setup(r => r.FindAsync(It.IsAny<Expression<Func<Item, bool>>>()))
             .ReturnsAsync(new[] { item });
 
         // Act
