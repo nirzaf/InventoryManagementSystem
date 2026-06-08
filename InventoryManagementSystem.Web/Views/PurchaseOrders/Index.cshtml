@@ -32,7 +32,7 @@
                         <td>@po.PONumber</td>
                         <td>@po.OrderDate.ToString("yyyy-MM-dd")</td>
                         <td>@po.Supplier?.Name</td>
-                        <td><span class="badge bg-@(po.Status == "Pending" ? "warning" : po.Status == "Approved" ? "success" : "secondary")">@po.Status</span></td>
+                        <td><span class="badge bg-@(po.Status == InventoryManagementSystem.Core.Entities.PurchaseOrderStatus.Pending ? "warning" : po.Status == InventoryManagementSystem.Core.Entities.PurchaseOrderStatus.Approved ? "success" : "secondary")">@po.Status</span></td>
                         <td class="text-end">@po.TotalAmount.ToString("C")</td>
                         <td class="text-end">
                             <a asp-action="Details" asp-route-id="@po.Id" class="btn btn-sm btn-info">Details</a>

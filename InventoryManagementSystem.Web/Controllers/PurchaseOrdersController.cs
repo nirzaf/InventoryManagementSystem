@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace InventoryManagementSystem.Web.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin,Manager")]
 public class PurchaseOrdersController : Controller
 {
     private readonly IPurchaseOrderService _poService;
@@ -87,6 +87,7 @@ public class PurchaseOrdersController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         await _poService.DeleteAsync(id);

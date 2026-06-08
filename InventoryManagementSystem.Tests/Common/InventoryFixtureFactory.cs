@@ -37,14 +37,14 @@ public static class InventoryFixtureFactory
 
         fixture.Customize<StockTransaction>(c => c
             .With(x => x.Quantity, 10)
-            .With(x => x.TransactionType, "Receive")
+            .With(x => x.TransactionType, TransactionType.Receive)
             .Without(x => x.Item)
             .Without(x => x.FromLocation)
             .Without(x => x.ToLocation));
 
         fixture.Customize<PurchaseOrder>(c => c
             .With(x => x.PONumber, () => "PO-001")
-            .With(x => x.Status, "Pending")
+            .With(x => x.Status, PurchaseOrderStatus.Pending)
             .With(x => x.TotalAmount, 0m)
             .Without(x => x.Supplier)
             .Without(x => x.OrderDetails));

@@ -14,13 +14,13 @@
             <dt class="col-sm-4">Supplier</dt>
             <dd class="col-sm-8">@Model.Supplier?.Name</dd>
             <dt class="col-sm-4">Status</dt>
-            <dd class="col-sm-8"><span class="badge bg-@(Model.Status == "Pending" ? "warning" : "success")">@Model.Status</span></dd>
+            <dd class="col-sm-8"><span class="badge bg-@(Model.Status == InventoryManagementSystem.Core.Entities.PurchaseOrderStatus.Pending ? "warning" : "success")">@Model.Status</span></dd>
             <dt class="col-sm-4">Total</dt>
             <dd class="col-sm-8">@Model.TotalAmount.ToString("C")</dd>
         </dl>
     </div>
     <div class="col-md-6 text-end">
-        @if (Model.Status == "Pending")
+        @if (Model.Status == InventoryManagementSystem.Core.Entities.PurchaseOrderStatus.Pending)
         {
             <form asp-action="UpdateStatus" method="post" class="d-inline">
                 <input type="hidden" name="id" value="@Model.Id" />

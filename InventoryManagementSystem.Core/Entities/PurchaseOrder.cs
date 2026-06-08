@@ -8,7 +8,7 @@ public class PurchaseOrder
     public int SupplierId { get; set; }
     public Supplier Supplier { get; set; } = null!;
     public decimal TotalAmount { get; set; }
-    public string? Status { get; set; }
+    public PurchaseOrderStatus Status { get; set; }
     public string? Notes { get; set; }
     public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
 }

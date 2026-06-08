@@ -41,7 +41,7 @@ public class DemandForecastService : IDemandForecastService
         // Gather historical demand: Sell + Transfer-out transactions
         var transactions = await _txRepo.FindAsync(t =>
             t.ItemId == itemId &&
-            (t.TransactionType == "Sell" || t.TransactionType == "Transfer"));
+            (t.TransactionType == TransactionType.Sell || t.TransactionType == TransactionType.Transfer));
 
         var dailyDemand = transactions
             .GroupBy(t => t.TransactionDate.Date)

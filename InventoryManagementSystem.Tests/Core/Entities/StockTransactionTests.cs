@@ -21,7 +21,7 @@ public class StockTransactionTests
             ItemId = _fixture.Create<int>(),
             FromLocationId = _fixture.Create<int>(),
             Quantity = quantity,
-            TransactionType = "Receive",
+            TransactionType = TransactionType.Receive,
             TransactionDate = DateTime.UtcNow
         };
 
@@ -97,11 +97,11 @@ public class StockTransactionTests
     }
 
     [Theory]
-    [InlineData("Receive", 1)]
-    [InlineData("Transfer", 2)]
-    [InlineData("Sell", null)]
+    [InlineData(TransactionType.Receive, 1)]
+    [InlineData(TransactionType.Transfer, 2)]
+    [InlineData(TransactionType.Sell, null)]
     public void StockTransaction_WhenTypeChanges_DestinationSemanticsDiffer(
-        string transactionType, int? expectedToLocationId)
+        TransactionType transactionType, int? expectedToLocationId)
     {
         // Arrange
         var transaction = new StockTransaction

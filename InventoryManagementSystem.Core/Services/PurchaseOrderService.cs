@@ -7,11 +7,13 @@ namespace InventoryManagementSystem.Core.Services;
 public class PurchaseOrderService : IPurchaseOrderService
 {
     private readonly IRepository<PurchaseOrder> _poRepo;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PurchaseOrderService> _logger;
 
-    public PurchaseOrderService(IRepository<PurchaseOrder> poRepo, ILogger<PurchaseOrderService> logger)
+    public PurchaseOrderService(IRepository<PurchaseOrder> poRepo, IUnitOfWork unitOfWork, ILogger<PurchaseOrderService> logger)
     {
         _poRepo = poRepo;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -28,12 +30,14 @@ public class PurchaseOrderService : IPurchaseOrderService
     public async Task<PurchaseOrder> CreateAsync(PurchaseOrder purchaseOrder, List<OrderDetail> details)
     {
         purchaseOrder.OrderDate = DateTime.UtcNow;
-        purchaseOrder.Status = "Pending";
+        purchaseOrder.Status = PurchaseOrderStatus.Pending;
         purchaseOrder.TotalAmount = details.Sum(d => d.Quantity * d.UnitPrice);
         purchaseOrder.OrderDetails = details;
 
         _logger.LogInformation("Creating PO {PONumber}", purchaseOrder.PONumber);
-        return await _poRepo.AddAsync(purchaseOrder);
+        var created = await _poRepo.AddAsync(purchaseOrder);
+        await _unitOfWork.SaveChangesAsync();
+        return created;
     }
 
     public async Task UpdateStatusAsync(int id, string status)
@@ -41,9 +45,13 @@ public class PurchaseOrderService : IPurchaseOrderService
         var po = await _poRepo.GetByIdAsync(id);
         if (po == null) throw new InvalidOperationException("Purchase order not found");
 
-        po.Status = status;
+        if (!Enum.TryParse<PurchaseOrderStatus>(status, ignoreCase: true, out var parsedStatus))
+            throw new ArgumentException($"Invalid status: {status}");
+
+        po.Status = parsedStatus;
         await _poRepo.UpdateAsync(po);
-        _logger.LogInformation("Updated PO {Id} status to {Status}", id, status);
+        await _unitOfWork.SaveChangesAsync();
+        _logger.LogInformation("Updated PO {Id} status to {Status}", id, parsedStatus);
     }
 
     public async Task DeleteAsync(int id)
@@ -53,6 +61,7 @@ public class PurchaseOrderService : IPurchaseOrderService
         {
             _logger.LogInformation("Deleting PO {Id}", id);
             await _poRepo.DeleteAsync(po);
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }

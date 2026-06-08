@@ -14,11 +14,12 @@ public class ItemServiceTests
 {
     private readonly Fixture _fixture = InventoryFixtureFactory.Create();
     private readonly Mock<IRepository<Item>> _repoMock = new();
+    private readonly Mock<IUnitOfWork> _uowMock = new();
     private readonly ItemService _sut;
 
     public ItemServiceTests()
     {
-        _sut = new ItemService(_repoMock.Object, NullLogger<ItemService>.Instance);
+        _sut = new ItemService(_repoMock.Object, _uowMock.Object, NullLogger<ItemService>.Instance);
     }
 
     [Fact]

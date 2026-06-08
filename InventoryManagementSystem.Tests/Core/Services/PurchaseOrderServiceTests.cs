@@ -13,12 +13,12 @@ public class PurchaseOrderServiceTests
 {
     private readonly Fixture _fixture = InventoryFixtureFactory.Create();
     private readonly Mock<IRepository<PurchaseOrder>> _poRepoMock = new();
-    private readonly Mock<IAgenticProcurementClient> _agenticClientMock = new();
+    private readonly Mock<IUnitOfWork> _uowMock = new();
     private readonly PurchaseOrderService _sut;
 
     public PurchaseOrderServiceTests()
     {
-        _sut = new PurchaseOrderService(_poRepoMock.Object, NullLogger<PurchaseOrderService>.Instance);
+        _sut = new PurchaseOrderService(_poRepoMock.Object, _uowMock.Object, NullLogger<PurchaseOrderService>.Instance);
     }
 
     [Fact]
@@ -26,7 +26,6 @@ public class PurchaseOrderServiceTests
     {
         // Arrange
         var po = _fixture.Create<PurchaseOrder>();
-        po.Status = null;
         po.TotalAmount = 0m;
 
         var details = new List<OrderDetail>
@@ -43,13 +42,14 @@ public class PurchaseOrderServiceTests
         var result = await _sut.CreateAsync(po, details);
 
         // Assert
-        result.Status.Should().Be("Pending");
+        result.Status.Should().Be(PurchaseOrderStatus.Pending);
         result.TotalAmount.Should().Be(expectedTotal);
         result.OrderDetails.Should().BeEquivalentTo(details);
         _poRepoMock.Verify(r => r.AddAsync(It.Is<PurchaseOrder>(p =>
-            p.Status == "Pending" &&
+            p.Status == PurchaseOrderStatus.Pending &&
             p.TotalAmount == expectedTotal &&
             p.OrderDetails.Count == details.Count)), Times.Once);
+        _uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }
 
     [Fact]
@@ -69,6 +69,7 @@ public class PurchaseOrderServiceTests
 
         // Assert
         _poRepoMock.Verify(r => r.AddAsync(It.IsAny<PurchaseOrder>()), Times.Once);
+        _uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }
 
     [Fact]
@@ -131,11 +132,11 @@ public class PurchaseOrderServiceTests
     }
 
     [Fact]
-    public async Task UpdateStatusAsync_WhenSupplierIsValid_UpdatesOrderStatus()
+    public async Task UpdateStatusAsync_WhenValidStatus_UpdatesOrderStatus()
     {
         // Arrange
         var po = _fixture.Build<PurchaseOrder>()
-            .With(p => p.Status, "Pending")
+            .With(p => p.Status, PurchaseOrderStatus.Pending)
             .Create();
         _poRepoMock.Setup(r => r.GetByIdAsync(po.Id)).ReturnsAsync(po);
 
@@ -143,8 +144,24 @@ public class PurchaseOrderServiceTests
         await _sut.UpdateStatusAsync(po.Id, "Approved");
 
         // Assert
-        po.Status.Should().Be("Approved");
+        po.Status.Should().Be(PurchaseOrderStatus.Approved);
         _poRepoMock.Verify(r => r.UpdateAsync(po), Times.Once);
+        _uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_WhenInvalidStatus_ThrowsArgumentException()
+    {
+        // Arrange
+        var po = _fixture.Create<PurchaseOrder>();
+        _poRepoMock.Setup(r => r.GetByIdAsync(po.Id)).ReturnsAsync(po);
+
+        // Act
+        var act = async () => await _sut.UpdateStatusAsync(po.Id, "InvalidStatus");
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("Invalid status: InvalidStatus");
     }
 
     [Fact]
@@ -159,6 +176,7 @@ public class PurchaseOrderServiceTests
 
         // Assert
         _poRepoMock.Verify(r => r.DeleteAsync(po), Times.Once);
+        _uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }
 
     [Fact]
@@ -173,49 +191,5 @@ public class PurchaseOrderServiceTests
 
         // Assert
         _poRepoMock.Verify(r => r.DeleteAsync(It.IsAny<PurchaseOrder>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task DraftPurchaseOrderFromAgentAsync_WhenAgentGeneratesSupplierDraft_PersistsPurchaseOrderInDraftState()
-    {
-        // Arrange
-        var supplierId = _fixture.Create<int>();
-        var itemIds = _fixture.CreateMany<int>(3);
-        var agentDraft = new AgenticProcurementDraft
-        {
-            SupplierId = supplierId,
-            Subject = "RFQ: Restock of WIDGET-001",
-            Body = "Please quote 50 units of WIDGET-001 for delivery to Location-1.",
-            GeneratedAt = DateTime.UtcNow
-        };
-
-        _agenticClientMock
-            .Setup(c => c.DraftSupplierCorrespondenceAsync(supplierId, It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(agentDraft);
-
-        var details = itemIds.Select(id => new OrderDetail { ItemId = id, Quantity = 10, UnitPrice = 5.00m }).ToList();
-        var generated = await _agenticClientMock.Object.DraftSupplierCorrespondenceAsync(supplierId, itemIds);
-
-        var draftPo = _fixture.Build<PurchaseOrder>()
-            .With(p => p.SupplierId, supplierId)
-            .With(p => p.Notes, $"{generated.Subject}\n{generated.Body}")
-            .With(p => p.OrderDetails, new List<OrderDetail>())
-            .With(p => p.Status, "Draft")
-            .Create();
-        _poRepoMock.Setup(r => r.AddAsync(It.IsAny<PurchaseOrder>()))
-            .ReturnsAsync((PurchaseOrder p) => p);
-
-        // Act
-        var result = await _sut.CreateAsync(draftPo, details);
-
-        // Assert
-        generated.Should().BeEquivalentTo(agentDraft);
-        generated.Subject.Should().Contain("RFQ");
-        result.Notes.Should().Contain(agentDraft.Subject);
-        result.Notes.Should().Contain(agentDraft.Body);
-        _agenticClientMock.Verify(c =>
-            c.DraftSupplierCorrespondenceAsync(supplierId, It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()),
-            Times.Once);
-        _poRepoMock.Verify(r => r.AddAsync(It.IsAny<PurchaseOrder>()), Times.Once);
     }
 }

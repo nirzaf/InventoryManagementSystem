@@ -101,7 +101,7 @@ public class StockServiceTests
         existing.Quantity.Should().Be(75);
         _stockRepoMock.Verify(r => r.UpdateAsync(existing), Times.Once);
         _txRepoMock.Verify(r => r.AddAsync(It.Is<StockTransaction>(
-            t => t.TransactionType == "Receive" && t.Quantity == 25)), Times.Once);
+            t => t.TransactionType == TransactionType.Receive && t.Quantity == 25)), Times.Once);
         _uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }
 
@@ -153,7 +153,7 @@ public class StockServiceTests
         _stockRepoMock.Verify(r => r.UpdateAsync(source), Times.Once);
         _stockRepoMock.Verify(r => r.UpdateAsync(dest), Times.Once);
         _txRepoMock.Verify(r => r.AddAsync(It.Is<StockTransaction>(
-            t => t.TransactionType == "Transfer" && t.Quantity == 30 &&
+            t => t.TransactionType == TransactionType.Transfer && t.Quantity == 30 &&
                  t.FromLocationId == 10 && t.ToLocationId == 20)), Times.Once);
         _uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }
@@ -196,7 +196,7 @@ public class StockServiceTests
         stock.Quantity.Should().Be(70);
         _stockRepoMock.Verify(r => r.UpdateAsync(stock), Times.Once);
         _txRepoMock.Verify(r => r.AddAsync(It.Is<StockTransaction>(
-            t => t.TransactionType == "Sell" && t.Quantity == 30)), Times.Once);
+            t => t.TransactionType == TransactionType.Sell && t.Quantity == 30)), Times.Once);
         _uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
     }
 

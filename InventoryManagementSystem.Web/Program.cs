@@ -91,6 +91,13 @@ public class Program
                 new HeaderApiVersionReader("x-api-version"));
         }).AddMvc();
 
+        // Global exception handling
+        builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+        builder.Services.AddProblemDetails();
+
+        // Health checks
+        builder.Services.AddHealthChecks();
+
         var app = builder.Build();
 
         if (!app.Environment.IsDevelopment())
@@ -120,10 +127,12 @@ public class Program
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
         app.MapRazorPages();
+        app.MapHealthChecks("/health");
 
         // === Headless API v1 (MediatR-powered minimal endpoints) ===
         var v1 = app.MapGroup("/api/v1")
-            .WithTags("API v1");
+            .WithTags("API v1")
+            .RequireAuthorization();
 
         v1.MapGet("/items", async (IMediator mediator) =>
             Results.Ok(await mediator.Send(new GetAllItemsQuery())))
@@ -149,7 +158,8 @@ public class Program
             return Results.NoContent();
         })
             .WithName("ReceiveStock")
-            .WithTags("Stock");
+            .WithTags("Stock")
+            .RequireAuthorization(policy => policy.RequireRole("Admin", "Manager", "Staff"));
 
         // === AI / ML endpoints ===
 

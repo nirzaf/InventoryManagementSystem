@@ -17,7 +17,7 @@ public static class SeedData
         var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-        await context.Database.EnsureCreatedAsync();
+        // Migrations are applied in Program.cs via MigrateAsync — do not call EnsureCreatedAsync here.
 
         string[] roles = { "Admin", "Manager", "Staff" };
         foreach (var role in roles)

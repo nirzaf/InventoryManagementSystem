@@ -70,7 +70,7 @@ public class InventoryDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.PONumber).IsUnique();
             entity.Property(e => e.PONumber).HasMaxLength(50).IsRequired();
             entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,2)");
-            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50);
 
             entity.HasOne(po => po.Supplier)
                   .WithMany(s => s.PurchaseOrders)
@@ -95,7 +95,7 @@ public class InventoryDbContext : IdentityDbContext<ApplicationUser>
 
         modelBuilder.Entity<StockTransaction>(entity =>
         {
-            entity.Property(e => e.TransactionType).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.TransactionType).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Notes).HasMaxLength(500);
 
             entity.HasOne(st => st.Item)

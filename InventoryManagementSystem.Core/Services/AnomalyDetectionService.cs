@@ -30,13 +30,14 @@ public class AnomalyDetectionService : IAnomalyDetectionService
     {
         var anomalies = new List<StockAnomaly>();
 
-        var transactions = await _txRepo.GetAllAsync();
+        // Push date filtering to the database — avoids loading entire transaction table
+        var transactions = (await _txRepo.FindAsync(t =>
+            (from == null || t.TransactionDate >= from.Value) &&
+            (to == null || t.TransactionDate <= to.Value))).ToList();
         var items = (await _itemRepo.GetAllAsync()).ToDictionary(i => i.Id, i => i.ItemCode);
 
-        // Group transactions by item and day
+        // Group transactions by item
         var itemGroups = transactions
-            .Where(t => from == null || t.TransactionDate >= from.Value)
-            .Where(t => to == null || t.TransactionDate <= to.Value)
             .GroupBy(t => t.ItemId);
 
         foreach (var group in itemGroups)

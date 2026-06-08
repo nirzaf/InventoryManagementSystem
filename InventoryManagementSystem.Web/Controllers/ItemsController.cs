@@ -37,6 +37,7 @@ public class ItemsController : Controller
         return View(item);
     }
 
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Create()
     {
         ViewBag.Suppliers = await _supplierService.GetAllAsync();
@@ -45,7 +46,8 @@ public class ItemsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Item item)
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> Create([Bind("ItemCode,Description,Rate,SupplierId")] Item item)
     {
         if (ModelState.IsValid)
         {
@@ -57,6 +59,7 @@ public class ItemsController : Controller
         return View(item);
     }
 
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Edit(int id)
     {
         var item = await _itemService.GetByIdAsync(id);
@@ -67,7 +70,8 @@ public class ItemsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, Item item)
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> Edit(int id, [Bind("Id,ItemCode,Description,Rate,SupplierId")] Item item)
     {
         if (id != item.Id) return NotFound();
         if (ModelState.IsValid)
@@ -82,6 +86,7 @@ public class ItemsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         await _itemService.DeleteAsync(id);

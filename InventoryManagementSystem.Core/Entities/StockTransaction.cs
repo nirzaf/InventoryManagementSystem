@@ -10,7 +10,7 @@ public class StockTransaction
     public int? ToLocationId { get; set; }
     public Location? ToLocation { get; set; }
     public int Quantity { get; set; }
-    public string TransactionType { get; set; } = string.Empty; // Receive, Transfer, Sell
+    public TransactionType TransactionType { get; set; }
     public DateTime TransactionDate { get; set; }
     public string? Notes { get; set; }
 }

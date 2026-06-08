@@ -69,7 +69,7 @@ public class StockService : IStockService
             FromLocationId = locationId,
             ToLocationId = locationId,
             Quantity = quantity,
-            TransactionType = "Receive",
+            TransactionType = TransactionType.Receive,
             TransactionDate = DateTime.UtcNow,
             Notes = notes
         });
@@ -114,7 +114,7 @@ public class StockService : IStockService
             FromLocationId = fromLocationId,
             ToLocationId = toLocationId,
             Quantity = quantity,
-            TransactionType = "Transfer",
+            TransactionType = TransactionType.Transfer,
             TransactionDate = DateTime.UtcNow,
             Notes = notes
         });
@@ -141,7 +141,7 @@ public class StockService : IStockService
             ItemId = itemId,
             FromLocationId = locationId,
             Quantity = quantity,
-            TransactionType = "Sell",
+            TransactionType = TransactionType.Sell,
             TransactionDate = DateTime.UtcNow,
             Notes = notes
         });

@@ -43,7 +43,7 @@
                 {
                     <tr>
                         <td>@tx.TransactionDate.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td><span class="badge bg-@(tx.TransactionType == "Receive" ? "success" : tx.TransactionType == "Transfer" ? "info" : "warning")">@tx.TransactionType</span></td>
+                        <td><span class="badge bg-@(tx.TransactionType == InventoryManagementSystem.Core.Entities.TransactionType.Receive ? "success" : tx.TransactionType == InventoryManagementSystem.Core.Entities.TransactionType.Transfer ? "info" : "warning")">@tx.TransactionType</span></td>
                         <td>@tx.Item?.ItemCode</td>
                         <td>@tx.FromLocation?.Name</td>
                         <td>@tx.ToLocation?.Name</td>
