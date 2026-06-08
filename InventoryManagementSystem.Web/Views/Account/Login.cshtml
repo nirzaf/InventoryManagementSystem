@@ -1,0 +1,40 @@
+@{
+    ViewData["Title"] = "Login";
+    Layout = "_SimpleLayout";
+}
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow" style="width: 24rem;">
+        <div class="card-body p-4">
+            <h3 class="text-center mb-4">Inventory Management</h3>
+            <h5 class="text-center text-muted mb-4">Sign In</h5>
+
+            @if (!ViewContext.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div>@error.ErrorMessage</div>
+                    }
+                </div>
+            }
+
+            <form method="post" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" name="email" id="email" class="form-control" required
+                           placeholder="admin@inventory.com" />
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" name="password" id="password" class="form-control" required
+                           placeholder="Enter your password" />
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Sign In</button>
+            </form>
+
+        </div>
+    </div>
+</div>

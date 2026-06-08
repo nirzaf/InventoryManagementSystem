@@ -1,0 +1,34 @@
+CREATE DATABASE [Stock]
+GO
+USE [Stock]
+GO
+/****** Object:  Table [dbo].[Items]    Script Date: 12/09/2009 16:17:05 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[Items](
+	[ItemCode] [varchar](8) NOT NULL,
+	[ItemDescription] [varchar](1000) NOT NULL,
+	[ItemRate] [numeric](10, 2) NOT NULL,
+ CONSTRAINT [PK__Items__3ECC0FEB03317E3D] PRIMARY KEY CLUSTERED 
+(
+	[ItemCode] ASC
+)WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+SET ANSI_PADDING OFF
+GO
+/****** Object:  Table [dbo].[ItemLocation]    Script Date: 12/09/2009 16:17:05 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [dbo].[ItemLocation](
+	[LocationName] [varchar](50) NOT NULL,
+	[LocationAddress] [varchar](1000) NOT NULL,
+ CONSTRAINT [PK__ItemLoca__F946BB857F60ED59] PRIMARY KEY CLUSTERED

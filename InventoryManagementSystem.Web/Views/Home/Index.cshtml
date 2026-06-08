@@ -1,0 +1,62 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h2>Dashboard</h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Items</h5>
+                <h2>@ViewBag.ItemCount</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">Purchase Orders</h5>
+                <h2>@ViewBag.POCount</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">Units in Stock</h5>
+                <h2>@ViewBag.StockItems</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header fw-bold">Quick Actions</div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-controller="Items" asp-action="Create" class="btn btn-outline-primary">Add New Item</a>
+                    <a asp-controller="Stock" asp-action="Receive" class="btn btn-outline-success">Receive Stock</a>
+                    <a asp-controller="Suppliers" asp-action="Create" class="btn btn-outline-info">Add New Supplier</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header fw-bold">Navigation</div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-controller="Items" asp-action="Index" class="btn btn-outline-secondary">Manage Items</a>
+                    <a asp-controller="Stock" asp-action="Index" class="btn btn-outline-secondary">View Stock</a>
+                    <a asp-controller="PurchaseOrders" asp-action="Index" class="btn btn-outline-secondary">Purchase Orders</a>
+                    <a asp-controller="Suppliers" asp-action="Index" class="btn btn-outline-secondary">Manage Suppliers</a>
+                    <a asp-controller="Locations" asp-action="Index" class="btn btn-outline-secondary">Manage Locations</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

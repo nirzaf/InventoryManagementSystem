@@ -1,0 +1,15 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Database=InventoryDB;Username=postgres;Password=yourpassword"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AdminSettings": {
+    "Email": "admin@example.com",
+    "Password": "ChangeMe123"
+  }
+}

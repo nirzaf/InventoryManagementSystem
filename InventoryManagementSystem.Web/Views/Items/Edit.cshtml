@@ -1,0 +1,46 @@
+@model InventoryManagementSystem.Core.Entities.Item
+@{
+    ViewData["Title"] = "Edit Item";
+}
+
+<h2>Edit Item</h2>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="mb-3">
+                <label asp-for="ItemCode" class="form-label"></label>
+                <input asp-for="ItemCode" class="form-control" required />
+                <span asp-validation-for="ItemCode" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <input asp-for="Description" class="form-control" required />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Rate" class="form-label"></label>
+                <input asp-for="Rate" class="form-control" type="number" step="0.01" required />
+                <span asp-validation-for="Rate" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="SupplierId" class="form-label">Supplier</label>
+                <select asp-for="SupplierId" class="form-select">
+                    <option value="">-- Select Supplier --</option>
+                    @foreach (var supplier in ViewBag.Suppliers)
+                    {
+                        <option value="@supplier.Id">@supplier.Name</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

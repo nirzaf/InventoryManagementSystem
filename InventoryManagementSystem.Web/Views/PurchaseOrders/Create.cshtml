@@ -1,0 +1,83 @@
+@{
+    ViewData["Title"] = "Create Purchase Order";
+}
+
+<h2>Create Purchase Order</h2>
+<hr />
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create" method="post">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">PO Number</label>
+                    <input name="PONumber" class="form-control" required placeholder="e.g. PO-2026-001" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Supplier</label>
+                    <select name="SupplierId" class="form-select" required>
+                        <option value="">-- Select Supplier --</option>
+                        @foreach (var s in ViewBag.Suppliers)
+                        {
+                            <option value="@s.Id">@s.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <h5>Line Items</h5>
+            <div id="lineItems">
+                <div class="row mb-2 line-item">
+                    <div class="col-md-5">
+                        <select name="itemIds" class="form-select">
+                            <option value="">-- Select Item --</option>
+                            @foreach (var item in ViewBag.Items)
+                            {
+                                <option value="@item.Id">@item.ItemCode - @item.Description</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input name="quantities" type="number" class="form-control" min="1" placeholder="Qty" />
+                    </div>
+                    <div class="col-md-3">
+                        <input name="unitPrices" type="number" step="0.01" class="form-control" placeholder="Unit Price" />
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary mb-3" onclick="addLineItem()">+ Add Item</button>
+
+            <div>
+                <button type="submit" class="btn btn-primary">Create Purchase Order</button>
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function addLineItem() {
+            const container = document.getElementById('lineItems');
+            const itemOptions = document.querySelector('select[name="itemIds"]').innerHTML;
+            const newRow = document.createElement('div');
+            newRow.className = 'row mb-2 line-item';
+            newRow.innerHTML = `
+                <div class="col-md-5">
+                    <select name="itemIds" class="form-select">
+                        ${itemOptions}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input name="quantities" type="number" class="form-control" min="1" placeholder="Qty" />
+                </div>
+                <div class="col-md-3">
+                    <input name="unitPrices" type="number" step="0.01" class="form-control" placeholder="Unit Price" />
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.line-item').remove()">X</button>
+                </div>
+            `;
+            container.appendChild(newRow);
+        }
+    </script>
+}

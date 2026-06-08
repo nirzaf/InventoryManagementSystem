@@ -1,0 +1,52 @@
+@{
+    ViewData["Title"] = "Transfer Stock";
+}
+
+<h2>Transfer Stock</h2>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Transfer" method="post">
+            <div class="mb-3">
+                <label class="form-label">Item</label>
+                <select name="itemId" class="form-select" required>
+                    <option value="">-- Select Item --</option>
+                    @foreach (var item in ViewBag.Items)
+                    {
+                        <option value="@item.Id">@item.ItemCode - @item.Description</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">From Location</label>
+                <select name="fromLocationId" class="form-select" required>
+                    <option value="">-- Select Source --</option>
+                    @foreach (var loc in ViewBag.Locations)
+                    {
+                        <option value="@loc.Id">@loc.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">To Location</label>
+                <select name="toLocationId" class="form-select" required>
+                    <option value="">-- Select Destination --</option>
+                    @foreach (var loc in ViewBag.Locations)
+                    {
+                        <option value="@loc.Id">@loc.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Quantity</label>
+                <input name="quantity" type="number" class="form-control" min="1" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Notes</label>
+                <textarea name="notes" class="form-control" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn btn-info">Transfer Stock</button>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>

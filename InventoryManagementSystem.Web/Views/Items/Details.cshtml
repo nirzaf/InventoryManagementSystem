@@ -1,0 +1,24 @@
+@model InventoryManagementSystem.Core.Entities.Item
+@{
+    ViewData["Title"] = "Item Details";
+}
+
+<h2>Item Details</h2>
+<hr />
+<dl class="row">
+    <dt class="col-sm-3">Item Code</dt>
+    <dd class="col-sm-9">@Model.ItemCode</dd>
+
+    <dt class="col-sm-3">Description</dt>
+    <dd class="col-sm-9">@Model.Description</dd>
+
+    <dt class="col-sm-3">Rate</dt>
+    <dd class="col-sm-9">@Model.Rate.ToString("C")</dd>
+
+    <dt class="col-sm-3">Supplier</dt>
+    <dd class="col-sm-9">@Model.Supplier?.Name ?? "N/A"</dd>
+</dl>
+<p>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</p>

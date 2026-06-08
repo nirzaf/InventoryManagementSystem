@@ -1,0 +1,49 @@
+@model IEnumerable<InventoryManagementSystem.Core.Entities.PurchaseOrder>
+@{
+    ViewData["Title"] = "Purchase Orders";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Purchase Orders</h2>
+    <a asp-action="Create" class="btn btn-primary">New Purchase Order</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-striped table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>PO Number</th>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th>Status</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-3">No purchase orders found.</td></tr>
+                }
+                @foreach (var po in Model)
+                {
+                    <tr>
+                        <td>@po.PONumber</td>
+                        <td>@po.OrderDate.ToString("yyyy-MM-dd")</td>
+                        <td>@po.Supplier?.Name</td>
+                        <td><span class="badge bg-@(po.Status == "Pending" ? "warning" : po.Status == "Approved" ? "success" : "secondary")">@po.Status</span></td>
+                        <td class="text-end">@po.TotalAmount.ToString("C")</td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@po.Id" class="btn btn-sm btn-info">Details</a>
+                            <form asp-action="Delete" asp-route-id="@po.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete this PO?')">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
