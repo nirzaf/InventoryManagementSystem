@@ -1,9 +1,12 @@
 using Asp.Versioning;
+using FluentValidation;
+using InventoryManagementSystem.Core.Behaviors;
 using InventoryManagementSystem.Core.Features.Items.Queries;
 using InventoryManagementSystem.Core.Features.Stock.Commands;
 using InventoryManagementSystem.Core.Features.Stock.Queries;
 using InventoryManagementSystem.Core.Interfaces;
 using InventoryManagementSystem.Core.Services;
+using InventoryManagementSystem.Core.Validators;
 using InventoryManagementSystem.Infrastructure.Data;
 using InventoryManagementSystem.Infrastructure.Repositories;
 using MediatR;
@@ -71,6 +74,10 @@ public class Program
         // AI / ML.NET services (platform-independent, no Azure)
         builder.Services.AddScoped<IDemandForecastService, DemandForecastService>();
         builder.Services.AddScoped<IAnomalyDetectionService, AnomalyDetectionService>();
+
+        // FluentValidation — auto-validates MediatR requests via pipeline behavior
+        builder.Services.AddValidatorsFromAssemblyContaining<ItemValidator>();
+        builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         // MediatR CQRS — scans all handler assemblies
         builder.Services.AddMediatR(cfg =>

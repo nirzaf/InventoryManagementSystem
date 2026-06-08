@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,6 +25,42 @@ public class GlobalExceptionHandler : IExceptionHandler
         CancellationToken cancellationToken)
     {
         _logger.LogError(exception, "Unhandled exception: {Message}", exception.Message);
+
+        // Handle FluentValidation errors with field-level detail
+        if (exception is ValidationException validationException)
+        {
+            var errors = validationException.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray());
+
+            if (httpContext.Request.Path.StartsWithSegments("/api"))
+            {
+                httpContext.Response.StatusCode = 400;
+                httpContext.Response.ContentType = "application/problem+json";
+
+                var validationProblem = new ValidationProblemDetails
+                {
+                    Status = 400,
+                    Title = "Validation failed",
+                    Detail = "One or more validation errors occurred",
+                    Instance = httpContext.Request.Path
+                };
+
+                foreach (var error in errors)
+                {
+                    validationProblem.Errors.Add(error.Key, error.Value);
+                }
+
+                await httpContext.Response.WriteAsJsonAsync(validationProblem, cancellationToken);
+                return true;
+            }
+
+            // For MVC, store errors in TempData for display
+            httpContext.Response.StatusCode = 400;
+            return false;
+        }
 
         var (statusCode, title) = exception switch
         {
