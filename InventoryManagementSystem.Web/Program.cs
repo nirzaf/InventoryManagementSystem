@@ -68,6 +68,10 @@ public class Program
         builder.Services.AddScoped<IStockService, StockService>();
         builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 
+        // AI / ML.NET services (platform-independent, no Azure)
+        builder.Services.AddScoped<IDemandForecastService, DemandForecastService>();
+        builder.Services.AddScoped<IAnomalyDetectionService, AnomalyDetectionService>();
+
         // MediatR CQRS — scans all handler assemblies
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(InventoryManagementSystem.Core.Features.Items.Queries.GetAllItemsQuery).Assembly));
@@ -146,6 +150,23 @@ public class Program
         })
             .WithName("ReceiveStock")
             .WithTags("Stock");
+
+        // === AI / ML endpoints ===
+
+        v1.MapGet("/forecast/{itemId:int}", async (int itemId, int? horizon, IMediator mediator) =>
+            Results.Ok(await mediator.Send(new ForecastDemandQuery(itemId, horizon ?? 30))))
+            .WithName("ForecastDemand")
+            .WithTags("AI");
+
+        v1.MapGet("/forecast", async (int? horizon, IMediator mediator) =>
+            Results.Ok(await mediator.Send(new ForecastAllItemsDemandQuery(horizon ?? 30))))
+            .WithName("ForecastAllDemand")
+            .WithTags("AI");
+
+        v1.MapGet("/anomalies", async (DateTime? from, DateTime? to, IMediator mediator) =>
+            Results.Ok(await mediator.Send(new DetectAnomaliesQuery(from, to))))
+            .WithName("DetectAnomalies")
+            .WithTags("AI");
 
         // Auto-apply EF Core migrations (skip in Testing)
         if (!app.Environment.IsEnvironment("Testing"))

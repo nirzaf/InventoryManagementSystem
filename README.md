@@ -1,42 +1,35 @@
 # Inventory Management System
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![.NET](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue.svg)](https://www.postgresql.org/)
+[![.NET](https://img.shields.io/badge/.NET-10-purple.svg)](https://dotnet.microsoft.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 
 A modern, open-source ASP.NET Core MVC web application for managing inventory, stock operations, purchase orders, suppliers, and locations. Built with Clean Architecture for maintainability and testability.
-
-## Migration Status
-
-This project has been migrated from a legacy Windows Forms application (.NET 4.0) to a modern web application using:
-
-- **.NET 9** (can be upgraded to .NET 10 when available)
-- **ASP.NET Core MVC** with Razor views
-- **Entity Framework Core 9** with PostgreSQL
-- **MudBlazor** UI components
-- **QuestPDF** for report generation
-- **Serilog** for logging
-- **ASP.NET Core Identity** for authentication and authorization
 
 ## Technology Stack
 
 | Component | Technology |
 |-----------|-----------|
-| Framework | .NET 9 / ASP.NET Core MVC |
-| Database | PostgreSQL 14+ |
-| ORM | Entity Framework Core 9 |
-| UI Components | MudBlazor |
+| Framework | .NET 10 / ASP.NET Core MVC |
+| Database | PostgreSQL 16 |
+| ORM | Entity Framework Core 10 (with Npgsql) |
+| CQRS / Mediator | MediatR 12 |
+| UI Components | MudBlazor 9 |
 | Authentication | ASP.NET Core Identity (RBAC) |
-| Logging | Serilog |
+| Logging | Serilog (ASP.NET Core integration) |
 | PDF Reports | QuestPDF |
 | Validation | FluentValidation |
 | Object Mapping | AutoMapper |
-| Testing | xUnit, Moq, FluentAssertions |
+| API Versioning | Asp.Versioning.Mvc |
+| Testing | xUnit, Moq, FluentAssertions, AutoFixture |
+| Integration Testing | Microsoft.AspNetCore.Mvc.Testing, EF Core InMemory |
+| Containerization | Docker, Docker Compose |
+| Web Server (runtime) | Kestrel via ASP.NET Core 10 |
 
 ## Prerequisites
 
-- .NET 9 SDK or later
-- PostgreSQL 14+
+- .NET 10 SDK or later
+- PostgreSQL 16+ (or use the bundled Docker Compose setup)
 - Any editor: Visual Studio 2022, VS Code, or JetBrains Rider
 
 ## Getting Started
@@ -53,6 +46,11 @@ createdb InventoryDB
 **Using Docker:**
 ```bash
 docker run --name inventory-postgres -e POSTGRES_PASSWORD=yourpassword -p 5432:5432 -d postgres:16
+```
+
+**Or use the bundled Docker Compose stack (app + database):**
+```bash
+docker compose up -d
 ```
 
 ### 2. Configure Database Connection
@@ -127,6 +125,8 @@ InventoryManagementSystem/
 - MudBlazor UI components for responsive design
 - Serilog structured logging (console + rolling file)
 - QuestPDF for report generation
+- MediatR-based CQRS pipeline for application logic
+- ASP.NET API versioning for headless/API surfaces
 - Async/await patterns throughout
 - Solution structure ready for extension and contribution
 
@@ -145,21 +145,8 @@ InventoryManagementSystem/
 - Dependency Injection
 - Unit of Work (via EF Core DbContext)
 - Service Layer Pattern
-
-## Technology Stack
-
-| Component | Technology |
-|-----------|-----------|
-| Framework | .NET 9 / ASP.NET Core MVC |
-| Database | PostgreSQL 14+ |
-| ORM | Entity Framework Core 9 |
-| UI Components | MudBlazor |
-| Authentication | ASP.NET Core Identity |
-| Logging | Serilog |
-| PDF Reports | QuestPDF |
-| Validation | FluentValidation |
-| Object Mapping | AutoMapper |
-| Testing | xUnit, Moq, FluentAssertions |
+- CQRS with MediatR
+- API Versioning
 
 ## Development
 
@@ -207,24 +194,15 @@ Set these environment variables in production (never commit secrets):
 dotnet publish -c Release -o ./publish
 ```
 
-### Docker (Optional)
+### Docker
+
+A multi-stage Dockerfile (targeting `mcr.microsoft.com/dotnet/sdk:10.0` and `mcr.microsoft.com/dotnet/aspnet:10.0`) and a `docker-compose.yml` are provided.
 
 ```bash
-docker run -d \
-  -e ConnectionStrings__DefaultConnection="Host=host.docker.internal;Database=InventoryDB;Username=postgres;Password=yourpassword" \
-  -e ASPNETCORE_ENVIRONMENT=Production \
-  -p 8080:8080 \
-  inventory-management-system
+docker compose up --build -d
 ```
 
-## Data Migration from SQL Server
-
-To migrate data from the old SQL Server database:
-
-1. Export data from SQL Server to CSV files
-2. Create a data import utility (see IMPLEMENTATION_GUIDE.md)
-3. Import CSV data into PostgreSQL
-4. Verify data integrity
+The app container listens on port `8080` and connects to the bundled `postgres:16-alpine` service.
 
 ## Testing
 
@@ -258,15 +236,49 @@ This project is licensed under the [MIT License](LICENSE). You are free to use, 
 - [GitHub Issues](https://github.com/YOUR_ORG/InventoryManagementSystem/issues) for bugs and features
 - [GitHub Discussions](https://github.com/YOUR_ORG/InventoryManagementSystem/discussions) for questions
 
-## Migration from Windows Forms
+## Acknowledgements
 
-This project replaces the legacy Windows Forms application with a modern web-based solution. Key improvements:
+This project stands on the shoulders of open source. We gratefully acknowledge the following projects and their contributors:
 
-- Cross-platform compatibility
-- Modern responsive UI
-- Better security with role-based access
-- Production-ready logging and error handling
-- Testable architecture
-- Easier deployment and maintenance
+### Runtime & Frameworks
+- [.NET](https://github.com/dotnet/core) and [ASP.NET Core](https://github.com/dotnet/aspnetcore) — Copyright (c) .NET Foundation and contributors. Licensed under the [MIT License](https://github.com/dotnet/aspnetcore/blob/main/LICENSE.txt).
+- [Kestrel web server](https://github.com/dotnet/aspnetcore) — part of the ASP.NET Core project, MIT License.
 
-See `IMPLEMENTATION_GUIDE.md` for complete migration details.
+### Database & Data Access
+- [PostgreSQL](https://www.postgresql.org/) — Copyright (c) The PostgreSQL Global Development Group. Licensed under the [PostgreSQL License](https://www.postgresql.org/about/licence/) (a permissive BSD-style license).
+- [Entity Framework Core](https://github.com/dotnet/efcore) — Copyright (c) .NET Foundation and contributors. Licensed under the [MIT License](https://github.com/dotnet/efcore/blob/main/LICENSE.txt).
+- [Npgsql](https://github.com/npgsql/npgsql) — Copyright (c) Npgsql and contributors. Licensed under the [PostgreSQL License](https://github.com/npgsql/npgsql/blob/main/LICENSE).
+
+### Application & Architecture
+- [MediatR](https://github.com/LuckyPennySoftware/MediatR) — Copyright (c) Jimmy Bogard and contributors. Licensed under the [Apache License 2.0](https://github.com/LuckyPennySoftware/MediatR/blob/master/LICENSE).
+- [AutoMapper](https://github.com/AutoMapper/AutoMapper) — Copyright (c) Jimmy Bogard and contributors. Licensed under the [MIT License](https://github.com/AutoMapper/AutoMapper/blob/master/LICENSE.txt).
+- [FluentValidation](https://github.com/FluentValidation/FluentValidation) — Copyright (c) Jeremy Skinner and contributors. Licensed under the [Apache License 2.0](https://github.com/FluentValidation/FluentValidation/blob/main/LICENSE).
+- [ASP.NET API Versioning](https://github.com/dotnet/aspnet-api-versioning) — Copyright (c) .NET Foundation and contributors. Licensed under the [MIT License](https://github.com/dotnet/aspnet-api-versioning/blob/master/LICENSE.txt).
+
+### UI
+- [MudBlazor](https://github.com/MudBlazor/MudBlazor) — Copyright (c) MudBlazor and contributors. Licensed under the [MIT License](https://github.com/MudBlazor/MudBlazor/blob/master/LICENSE).
+- [Razor](https://github.com/dotnet/aspnetcore) — part of the ASP.NET Core project, MIT License.
+
+### Authentication & Security
+- [ASP.NET Core Identity](https://github.com/dotnet/aspnetcore) — part of the ASP.NET Core project, MIT License.
+
+### Logging
+- [Serilog](https://github.com/serilog/serilog) — Copyright (c) Serilog Contributors. Licensed under the [Apache License 2.0](https://github.com/serilog/serilog/blob/dev/LICENSE).
+- [Serilog.AspNetCore](https://github.com/serilog/serilog-aspnetcore) — Copyright (c) Serilog Contributors. Licensed under the [Apache License 2.0](https://github.com/serilog/serilog-aspnetcore/blob/main/LICENSE).
+
+### PDF Generation
+- [QuestPDF](https://github.com/QuestPDF/QuestPDF) — Copyright (c) QuestPDF and contributors. Licensed under the [MIT License](https://github.com/QuestPDF/QuestPDF/blob/main/LICENSE).
+
+### Testing
+- [xUnit](https://github.com/xunit/xunit) — Copyright (c) .NET Foundation and contributors. Licensed under the [Apache License 2.0](https://github.com/xunit/xunit/blob/main/LICENSE).
+- [Moq](https://github.com/devlooped/moq) — Copyright (c) Daniel Cazzulino and contributors. Licensed under the [BSD 3-Clause License](https://github.com/devlooped/moq/blob/main/LICENSE.txt).
+- [FluentAssertions](https://github.com/fluentassertions/fluentassertions) — Copyright (c) Dennis Doomen and contributors. Licensed under the [Apache License 2.0](https://github.com/fluentassertions/fluentassertions/blob/develop/LICENSE).
+- [AutoFixture](https://github.com/AutoFixture/AutoFixture) — Copyright (c) AutoFixture and contributors. Licensed under the [MIT License](https://github.com/AutoFixture/AutoFixture/blob/master/LICENSE).
+- [coverlet.collector](https://github.com/coverlet-coverage/coverlet) — Copyright (c) Toni Solarin-Sodara and contributors. Licensed under the [MIT License](https://github.com/coverlet-coverage/coverlet/blob/master/LICENSE).
+- [Microsoft.NET.Test.Sdk](https://github.com/microsoft/vstest) — Copyright (c) Microsoft and contributors. Licensed under the [MIT License](https://github.com/microsoft/vstest/blob/main/LICENSE).
+
+### Tooling & Infrastructure
+- [Docker](https://www.docker.com/) and the [mcr.microsoft.com/dotnet](https://hub.docker.com/_/microsoft-dotnet) base images — Copyright (c) Microsoft and Docker, Inc. Used under their respective licenses.
+- [Visual Studio](https://visualstudio.microsoft.com/), [Visual Studio Code](https://github.com/microsoft/vscode), and [JetBrains Rider](https://www.jetbrains.com/rider/) — used as development environments.
+
+Special thanks to the open source community — your work makes projects like this possible. If a project used here is not listed, please open an issue or pull request so we can add proper attribution.
