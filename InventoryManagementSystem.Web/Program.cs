@@ -2,6 +2,7 @@ using InventoryManagementSystem.Core.Interfaces;
 using InventoryManagementSystem.Core.Services;
 using InventoryManagementSystem.Infrastructure.Data;
 using InventoryManagementSystem.Infrastructure.Repositories;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
@@ -60,6 +61,10 @@ public class Program
         builder.Services.AddScoped<IStockService, StockService>();
         builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 
+        // MediatR CQRS — scans all handler assemblies
+        builder.Services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(typeof(InventoryManagementSystem.Core.Features.Items.Queries.GetAllItemsQuery).Assembly));
+
         // MVC
         builder.Services.AddControllersWithViews();
         builder.Services.AddRazorPages();
@@ -84,6 +89,35 @@ public class Program
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
         app.MapRazorPages();
+
+        // === Headless API v1 (MediatR-powered minimal endpoints) ===
+        var api = app.MapGroup("/api/v1");
+
+        api.MapGet("/items", async (IMediator mediator) =>
+            Results.Ok(await mediator.Send(new InventoryManagementSystem.Core.Features.Items.Queries.GetAllItemsQuery())))
+            .WithName("GetAllItems")
+            .WithTags("Items");
+
+        api.MapGet("/items/{id:int}", async (int id, IMediator mediator) =>
+        {
+            var item = await mediator.Send(new InventoryManagementSystem.Core.Features.Items.Queries.GetItemByIdQuery(id));
+            return item is null ? Results.NotFound() : Results.Ok(item);
+        })
+            .WithName("GetItemById")
+            .WithTags("Items");
+
+        api.MapGet("/stock", async (IMediator mediator) =>
+            Results.Ok(await mediator.Send(new InventoryManagementSystem.Core.Features.Stock.Queries.GetAllStockQuery())))
+            .WithName("GetAllStock")
+            .WithTags("Stock");
+
+        api.MapPost("/stock/receive", async (InventoryManagementSystem.Core.Features.Stock.Commands.ReceiveStockCommand cmd, IMediator mediator) =>
+        {
+            await mediator.Send(cmd);
+            return Results.NoContent();
+        })
+            .WithName("ReceiveStock")
+            .WithTags("Stock");
 
         // Seed demo data in development only
         if (app.Environment.IsDevelopment())

@@ -1,0 +1,170 @@
+using AutoFixture;
+using FluentAssertions;
+using InventoryManagementSystem.Core.Entities;
+using InventoryManagementSystem.Core.Interfaces;
+using InventoryManagementSystem.Core.Services;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+
+namespace InventoryManagementSystem.Tests.Core.Services;
+
+public class ItemServiceTests
+{
+    private readonly Fixture _fixture = new();
+    private readonly Mock<IRepository<Item>> _repoMock = new();
+    private readonly ItemService _sut;
+
+    public ItemServiceTests()
+    {
+        _sut = new ItemService(_repoMock.Object, NullLogger<ItemService>.Instance);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WhenItemExists_ReturnsItem()
+    {
+        // Arrange
+        var item = _fixture.Create<Item>();
+        _repoMock.Setup(r => r.GetByIdAsync(item.Id)).ReturnsAsync(item);
+
+        // Act
+        var result = await _sut.GetByIdAsync(item.Id);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(item);
+        _repoMock.Verify(r => r.GetByIdAsync(item.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_WhenItemDoesNotExist_ReturnsNull()
+    {
+        // Arrange
+        var id = _fixture.Create<int>();
+        _repoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Item?)null);
+
+        // Act
+        var result = await _sut.GetByIdAsync(id);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WhenItemsExist_ReturnsAllItems()
+    {
+        // Arrange
+        var items = _fixture.CreateMany<Item>(3);
+        _repoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(items);
+
+        // Act
+        var result = await _sut.GetAllAsync();
+
+        // Assert
+        result.Should().BeEquivalentTo(items);
+        _repoMock.Verify(r => r.GetAllAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_WhenCalled_ForwardsPaginationArguments()
+    {
+        // Arrange
+        var page = 2;
+        var pageSize = 10;
+        var items = _fixture.CreateMany<Item>(pageSize);
+        _repoMock.Setup(r => r.GetPagedAsync(page, pageSize)).ReturnsAsync(items);
+
+        // Act
+        var result = await _sut.GetPagedAsync(page, pageSize);
+
+        // Assert
+        result.Should().BeEquivalentTo(items);
+        _repoMock.Verify(r => r.GetPagedAsync(page, pageSize), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetCountAsync_WhenCalled_ReturnsCountFromRepository()
+    {
+        // Arrange
+        var count = _fixture.Create<int>();
+        _repoMock.Setup(r => r.CountAsync()).ReturnsAsync(count);
+
+        // Act
+        var result = await _sut.GetCountAsync();
+
+        // Assert
+        result.Should().Be(count);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenItemIsValid_AddsItemToRepository()
+    {
+        // Arrange
+        var item = _fixture.Create<Item>();
+        _repoMock.Setup(r => r.AddAsync(item)).ReturnsAsync(item);
+
+        // Act
+        var result = await _sut.CreateAsync(item);
+
+        // Assert
+        result.Should().BeEquivalentTo(item);
+        _repoMock.Verify(r => r.AddAsync(item), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenItemExists_UpdatesItemInRepository()
+    {
+        // Arrange
+        var item = _fixture.Create<Item>();
+
+        // Act
+        await _sut.UpdateAsync(item);
+
+        // Assert
+        _repoMock.Verify(r => r.UpdateAsync(item), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenItemExists_DeletesItemFromRepository()
+    {
+        // Arrange
+        var item = _fixture.Create<Item>();
+        _repoMock.Setup(r => r.GetByIdAsync(item.Id)).ReturnsAsync(item);
+
+        // Act
+        await _sut.DeleteAsync(item.Id);
+
+        // Assert
+        _repoMock.Verify(r => r.GetByIdAsync(item.Id), Times.Once);
+        _repoMock.Verify(r => r.DeleteAsync(item), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenItemDoesNotExist_DoesNotCallDelete()
+    {
+        // Arrange
+        var id = _fixture.Create<int>();
+        _repoMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Item?)null);
+
+        // Act
+        await _sut.DeleteAsync(id);
+
+        // Assert
+        _repoMock.Verify(r => r.DeleteAsync(It.IsAny<Item>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SearchAsync_WhenTermMatchesItemCode_ReturnsMatchingItems()
+    {
+        // Arrange
+        var term = "WIDGET";
+        var item = _fixture.Build<Item>().With(i => i.ItemCode, "WIDGET-001").Create();
+        _repoMock.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Item, bool>>>()))
+            .ReturnsAsync(new[] { item });
+
+        // Act
+        var result = await _sut.SearchAsync(term);
+
+        // Assert
+        result.Should().ContainSingle().Which.Should().BeEquivalentTo(item);
+    }
+}
