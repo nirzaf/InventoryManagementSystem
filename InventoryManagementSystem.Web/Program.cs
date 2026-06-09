@@ -132,6 +132,7 @@ public class Program
         app.UseSerilogRequestLogging();
 
         app.UseRouting();
+        app.UseCors("Default");
         app.UseAuthentication();
         app.UseAuthorization();
 
