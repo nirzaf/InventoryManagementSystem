@@ -14,6 +14,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Serilog;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace InventoryManagementSystem.Web;
 
@@ -53,6 +58,32 @@ public class Program
         {
             options.LoginPath = "/Account/Login";
             options.AccessDeniedPath = "/Account/AccessDenied";
+        });
+
+        // Authentication Configuration (Cookies + JWT Bearer)
+        var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+        var secretKey = jwtSettings["Secret"] ?? "SuperSecretKeyForDevelopmentPurposesOnlyDoNotUseInProduction123!";
+        var key = Encoding.ASCII.GetBytes(secretKey);
+
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = IdentityConstants.ApplicationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.RequireHttpsMetadata = false;
+            options.SaveToken = true;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = jwtSettings["Issuer"] ?? "InventoryManagementSystem",
+                ValidateAudience = true,
+                ValidAudience = jwtSettings["Audience"] ?? "InventoryManagementSystem",
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
         });
 
         // MudBlazor
@@ -118,6 +149,18 @@ public class Program
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
 
+        // Rate limiting
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.AddFixedWindowLimiter("ApiLimit", opt =>
+            {
+                opt.Window = TimeSpan.FromMinutes(1);
+                opt.PermitLimit = 60;
+                opt.QueueLimit = 10;
+                opt.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+            });
+        });
+
         // Health checks
         builder.Services.AddHealthChecks()
             .AddDbContextCheck<InventoryDbContext>();
@@ -145,8 +188,10 @@ public class Program
 
         app.UseRouting();
         app.UseCors("Default");
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseAntiforgery();
 
         app.MapControllerRoute(
             name: "default",
@@ -156,10 +201,42 @@ public class Program
             .AddInteractiveServerRenderMode();
         app.MapHealthChecks("/health");
 
-        // === Headless API v1 (MediatR-powered minimal endpoints) ===
         var v1 = app.MapGroup("/api/v1")
             .WithTags("API v1")
-            .RequireAuthorization();
+            .RequireAuthorization(new AuthorizationPolicyBuilder()
+                .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                .RequireAuthenticatedUser()
+                .Build())
+            .RequireRateLimiting("ApiLimit");
+
+        v1.MapPost("/auth/token", async (TokenRequest req, UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager) =>
+        {
+            var user = await userManager.FindByNameAsync(req.Username) ?? await userManager.FindByEmailAsync(req.Username);
+            if (user == null) return Results.Unauthorized();
+
+            var result = await signInManager.CheckPasswordSignInAsync(user, req.Password, false);
+            if (!result.Succeeded) return Results.Unauthorized();
+
+            var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new System.Security.Claims.ClaimsIdentity(new[]
+                {
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, user.UserName ?? ""),
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, user.Id),
+                    new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, (await userManager.GetRolesAsync(user)).FirstOrDefault() ?? "Staff")
+                }),
+                Expires = DateTime.UtcNow.AddHours(2),
+                Issuer = jwtSettings["Issuer"] ?? "InventoryManagementSystem",
+                Audience = jwtSettings["Audience"] ?? "InventoryManagementSystem",
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return Results.Ok(new { Token = tokenHandler.WriteToken(token), Expires = tokenDescriptor.Expires });
+        })
+        .AllowAnonymous()
+        .WithName("GenerateToken")
+        .WithTags("Auth");
 
         v1.MapGet("/items", async (IMediator mediator) =>
             Results.Ok(await mediator.Send(new GetAllItemsQuery())))
@@ -222,3 +299,5 @@ public class Program
         await app.RunAsync();
     }
 }
+
+public record TokenRequest(string Username, string Password);
