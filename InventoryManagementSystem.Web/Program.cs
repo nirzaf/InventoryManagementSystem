@@ -19,6 +19,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using InventoryManagementSystem.Web.BackgroundServices;
 
 namespace InventoryManagementSystem.Web;
 
@@ -89,6 +90,9 @@ public class Program
         // MudBlazor
         builder.Services.AddMudServices();
 
+        // Caching
+        builder.Services.AddMemoryCache();
+
         // HTTP context accessor for audit fields
         builder.Services.AddHttpContextAccessor();
 
@@ -148,6 +152,9 @@ public class Program
         // Global exception handling
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
+
+        // Background services
+        builder.Services.AddHostedService<ForecastBackgroundService>();
 
         // Rate limiting
         builder.Services.AddRateLimiter(options =>

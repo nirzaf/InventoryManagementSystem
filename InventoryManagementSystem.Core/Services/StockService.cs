@@ -43,39 +43,65 @@ public class StockService : IStockService
             orderBy: q => q.OrderByDescending(t => t.TransactionDate));
     }
 
+    private async Task ExecuteWithRetryAsync(Func<Task> action)
+    {
+        int retries = 3;
+        while (true)
+        {
+            try
+            {
+                await action();
+                break;
+            }
+            catch (InventoryManagementSystem.Core.Exceptions.ConcurrencyException ex)
+            {
+                if (--retries <= 0)
+                {
+                    _logger.LogError(ex, "Concurrency conflict could not be resolved after retries.");
+                    throw;
+                }
+                _logger.LogWarning("Concurrency conflict detected, retrying operation. Retries remaining: {Retries}", retries);
+                _unitOfWork.ClearTracker();
+                await Task.Delay(100);
+            }
+        }
+    }
+
     public async Task ReceiveStockAsync(int itemId, int locationId, int quantity, string? notes)
     {
         if (quantity <= 0) throw new ArgumentException("Quantity must be positive");
 
-        var existing = await GetByItemAndLocationAsync(itemId, locationId);
-        if (existing != null)
+        await ExecuteWithRetryAsync(async () =>
         {
-            existing.Quantity += quantity;
-            await _stockRepo.UpdateAsync(existing);
-        }
-        else
-        {
-            await _stockRepo.AddAsync(new StockInHand
+            var existing = await GetByItemAndLocationAsync(itemId, locationId);
+            if (existing != null)
+            {
+                existing.Quantity += quantity;
+                await _stockRepo.UpdateAsync(existing);
+            }
+            else
+            {
+                await _stockRepo.AddAsync(new StockInHand
+                {
+                    ItemId = itemId,
+                    LocationId = locationId,
+                    Quantity = quantity
+                });
+            }
+
+            await _txRepo.AddAsync(new StockTransaction
             {
                 ItemId = itemId,
-                LocationId = locationId,
-                Quantity = quantity
+                FromLocationId = locationId,
+                ToLocationId = locationId,
+                Quantity = quantity,
+                TransactionType = TransactionType.Receive,
+                TransactionDate = DateTime.UtcNow,
+                Notes = notes
             });
-        }
 
-        await _txRepo.AddAsync(new StockTransaction
-        {
-            ItemId = itemId,
-            FromLocationId = locationId,
-            ToLocationId = locationId,
-            Quantity = quantity,
-            TransactionType = TransactionType.Receive,
-            TransactionDate = DateTime.UtcNow,
-            Notes = notes
+            await _unitOfWork.SaveChangesAsync();
         });
-
-        // Single commit for atomicity
-        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Received {Qty} of item {ItemId} at location {LocId}", quantity, itemId, locationId);
     }
@@ -85,42 +111,44 @@ public class StockService : IStockService
         if (quantity <= 0) throw new ArgumentException("Quantity must be positive");
         if (fromLocationId == toLocationId) throw new ArgumentException("Source and destination must be different");
 
-        var source = await GetByItemAndLocationAsync(itemId, fromLocationId);
-        if (source == null || source.Quantity < quantity)
-            throw new InvalidOperationException("Insufficient stock at source location");
-
-        source.Quantity -= quantity;
-        await _stockRepo.UpdateAsync(source);
-
-        var dest = await GetByItemAndLocationAsync(itemId, toLocationId);
-        if (dest != null)
+        await ExecuteWithRetryAsync(async () =>
         {
-            dest.Quantity += quantity;
-            await _stockRepo.UpdateAsync(dest);
-        }
-        else
-        {
-            await _stockRepo.AddAsync(new StockInHand
+            var source = await GetByItemAndLocationAsync(itemId, fromLocationId);
+            if (source == null || source.Quantity < quantity)
+                throw new InvalidOperationException("Insufficient stock at source location");
+
+            source.Quantity -= quantity;
+            await _stockRepo.UpdateAsync(source);
+
+            var dest = await GetByItemAndLocationAsync(itemId, toLocationId);
+            if (dest != null)
+            {
+                dest.Quantity += quantity;
+                await _stockRepo.UpdateAsync(dest);
+            }
+            else
+            {
+                await _stockRepo.AddAsync(new StockInHand
+                {
+                    ItemId = itemId,
+                    LocationId = toLocationId,
+                    Quantity = quantity
+                });
+            }
+
+            await _txRepo.AddAsync(new StockTransaction
             {
                 ItemId = itemId,
-                LocationId = toLocationId,
-                Quantity = quantity
+                FromLocationId = fromLocationId,
+                ToLocationId = toLocationId,
+                Quantity = quantity,
+                TransactionType = TransactionType.Transfer,
+                TransactionDate = DateTime.UtcNow,
+                Notes = notes
             });
-        }
 
-        await _txRepo.AddAsync(new StockTransaction
-        {
-            ItemId = itemId,
-            FromLocationId = fromLocationId,
-            ToLocationId = toLocationId,
-            Quantity = quantity,
-            TransactionType = TransactionType.Transfer,
-            TransactionDate = DateTime.UtcNow,
-            Notes = notes
+            await _unitOfWork.SaveChangesAsync();
         });
-
-        // Single commit for atomicity
-        await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Transferred {Qty} of item {ItemId} from {From} to {To}", quantity, itemId, fromLocationId, toLocationId);
     }
@@ -129,25 +157,27 @@ public class StockService : IStockService
     {
         if (quantity <= 0) throw new ArgumentException("Quantity must be positive");
 
-        var stock = await GetByItemAndLocationAsync(itemId, locationId);
-        if (stock == null || stock.Quantity < quantity)
-            throw new InvalidOperationException("Insufficient stock for sale");
-
-        stock.Quantity -= quantity;
-        await _stockRepo.UpdateAsync(stock);
-
-        await _txRepo.AddAsync(new StockTransaction
+        await ExecuteWithRetryAsync(async () =>
         {
-            ItemId = itemId,
-            FromLocationId = locationId,
-            Quantity = quantity,
-            TransactionType = TransactionType.Sell,
-            TransactionDate = DateTime.UtcNow,
-            Notes = notes
-        });
+            var stock = await GetByItemAndLocationAsync(itemId, locationId);
+            if (stock == null || stock.Quantity < quantity)
+                throw new InvalidOperationException("Insufficient stock for sale");
 
-        // Single commit for atomicity
-        await _unitOfWork.SaveChangesAsync();
+            stock.Quantity -= quantity;
+            await _stockRepo.UpdateAsync(stock);
+
+            await _txRepo.AddAsync(new StockTransaction
+            {
+                ItemId = itemId,
+                FromLocationId = locationId,
+                Quantity = quantity,
+                TransactionType = TransactionType.Sell,
+                TransactionDate = DateTime.UtcNow,
+                Notes = notes
+            });
+
+            await _unitOfWork.SaveChangesAsync();
+        });
 
         _logger.LogInformation("Sold {Qty} of item {ItemId} from location {LocId}", quantity, itemId, locationId);
     }

@@ -1,7 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using InventoryManagementSystem.Core.Interfaces;
+using InventoryManagementSystem.Core.Exceptions;
 
 namespace InventoryManagementSystem.Infrastructure.Data;
 
@@ -17,7 +19,14 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            return await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new ConcurrencyException("A concurrency conflict occurred while saving changes.", ex);
+        }
     }
 
     public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
@@ -38,6 +47,11 @@ public class UnitOfWork : IUnitOfWork
             {
                 await _currentTransaction.CommitAsync(cancellationToken);
             }
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            await RollbackTransactionAsync(cancellationToken);
+            throw new ConcurrencyException("A concurrency conflict occurred during commit.", ex);
         }
         catch
         {

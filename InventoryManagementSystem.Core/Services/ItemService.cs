@@ -1,6 +1,7 @@
 using InventoryManagementSystem.Core.Entities;
 using InventoryManagementSystem.Core.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace InventoryManagementSystem.Core.Services;
 
@@ -9,15 +10,26 @@ public class ItemService : IItemService
     private readonly IRepository<Item> _repo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ItemService> _logger;
+    private readonly IMemoryCache _cache;
+    private const string ItemsCacheKey = "all_items";
 
-    public ItemService(IRepository<Item> repo, IUnitOfWork unitOfWork, ILogger<ItemService> logger)
+    public ItemService(IRepository<Item> repo, IUnitOfWork unitOfWork, ILogger<ItemService> logger, IMemoryCache cache)
     {
         _repo = repo;
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _cache = cache;
     }
 
-    public async Task<IEnumerable<Item>> GetAllAsync() => await _repo.GetAllAsync();
+    public async Task<IEnumerable<Item>> GetAllAsync()
+    {
+        return await _cache.GetOrCreateAsync(ItemsCacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+            return await _repo.GetAllAsync();
+        }) ?? Array.Empty<Item>();
+    }
+
     public async Task<IEnumerable<Item>> GetPagedAsync(int page, int pageSize) => await _repo.GetPagedAsync(page, pageSize);
     public async Task<int> GetCountAsync() => await _repo.CountAsync();
     public async Task<Item?> GetByIdAsync(int id) => await _repo.GetByIdAsync(id);
@@ -27,6 +39,7 @@ public class ItemService : IItemService
         _logger.LogInformation("Creating item {ItemCode}", item.ItemCode);
         var created = await _repo.AddAsync(item);
         await _unitOfWork.SaveChangesAsync();
+        _cache.Remove(ItemsCacheKey);
         return created;
     }
 
@@ -35,6 +48,7 @@ public class ItemService : IItemService
         _logger.LogInformation("Updating item {Id}", item.Id);
         await _repo.UpdateAsync(item);
         await _unitOfWork.SaveChangesAsync();
+        _cache.Remove(ItemsCacheKey);
     }
 
     public async Task DeleteAsync(int id)
@@ -45,6 +59,7 @@ public class ItemService : IItemService
             _logger.LogInformation("Deleting item {Id}", id);
             await _repo.DeleteAsync(item);
             await _unitOfWork.SaveChangesAsync();
+            _cache.Remove(ItemsCacheKey);
         }
     }
 
