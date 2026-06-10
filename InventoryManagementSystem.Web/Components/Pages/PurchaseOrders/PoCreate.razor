@@ -23,11 +23,11 @@
                         <MudTextField @bind-Value="_po.PONumber" Label="PO Number" Required="true" Class="mb-3" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudSelect @bind-Value="_po.SupplierId" Label="Supplier" AnchorOrigin="Origin.BottomCenter" Required="true" Class="mb-3">
-                            <MudSelectItem Value="@((int?)null)">-- Select Supplier --</MudSelectItem>
+                        <MudSelect T="int" @bind-Value="_po.SupplierId" Label="Supplier" AnchorOrigin="Origin.BottomCenter" Required="true" Class="mb-3">
+                            <MudSelectItem Value="@(0)">-- Select Supplier --</MudSelectItem>
                             @foreach (var supplier in _suppliers)
                             {
-                                <MudSelectItem Value="@((int?)supplier.Id)">@supplier.Name</MudSelectItem>
+                                <MudSelectItem Value="@supplier.Id">@supplier.Name</MudSelectItem>
                             }
                         </MudSelect>
                     </MudItem>
