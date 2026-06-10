@@ -17,19 +17,16 @@ COPY . .
 # Publish the web app
 WORKDIR /src/InventoryManagementSystem.Web
 RUN dotnet publish -c Release -o /app --no-restore
+RUN mkdir -p /app/logs
 
 # === Runtime Stage ===
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# Create non-root user
-RUN adduser --disabled-password --gecos "" appuser && \
-    mkdir -p /app/logs && \
-    chown -R appuser:appuser /app
+# Copy published files with ownership set to the built-in 'app' user (UID 1654)
+COPY --from=build --chown=app:app /app .
 
-USER appuser
-
-COPY --from=build /app .
+USER app
 
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080

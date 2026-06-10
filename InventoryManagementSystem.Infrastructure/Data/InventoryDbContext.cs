@@ -93,6 +93,12 @@ public class InventoryDbContext : IdentityDbContext<ApplicationUser>
                   .WithMany(l => l.StockInHands)
                   .HasForeignKey(s => s.LocationId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property<uint>("Version")
+                  .HasColumnName("xmin")
+                  .HasColumnType("xid")
+                  .ValueGeneratedOnAddOrUpdate()
+                  .IsConcurrencyToken();
         });
 
         modelBuilder.Entity<PurchaseOrder>(entity =>

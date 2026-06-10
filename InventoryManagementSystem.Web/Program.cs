@@ -86,6 +86,17 @@ public class Program
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(InventoryManagementSystem.Core.Features.Items.Queries.GetAllItemsQuery).Assembly));
 
+        // CORS policy
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("Default", policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            });
+        });
+
         // MVC & Blazor
         builder.Services.AddControllersWithViews();
         builder.Services.AddRazorPages();
@@ -108,7 +119,8 @@ public class Program
         builder.Services.AddProblemDetails();
 
         // Health checks
-        builder.Services.AddHealthChecks();
+        builder.Services.AddHealthChecks()
+            .AddDbContextCheck<InventoryDbContext>();
 
         var app = builder.Build();
 
@@ -193,8 +205,8 @@ public class Program
             .WithName("DetectAnomalies")
             .WithTags("AI");
 
-        // Auto-apply EF Core migrations (skip in Testing)
-        if (!app.Environment.IsEnvironment("Testing"))
+        // Auto-apply EF Core migrations (Development only)
+        if (app.Environment.IsDevelopment())
         {
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
