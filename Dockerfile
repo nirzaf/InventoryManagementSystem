@@ -7,6 +7,7 @@ COPY InventoryManagementSystem.sln .
 COPY InventoryManagementSystem.Web/InventoryManagementSystem.Web.csproj InventoryManagementSystem.Web/
 COPY InventoryManagementSystem.Core/InventoryManagementSystem.Core.csproj InventoryManagementSystem.Core/
 COPY InventoryManagementSystem.Infrastructure/InventoryManagementSystem.Infrastructure.csproj InventoryManagementSystem.Infrastructure/
+COPY InventoryManagementSystem.Tests/InventoryManagementSystem.Tests.csproj InventoryManagementSystem.Tests/
 
 # Restore dependencies (cached unless csproj changes)
 RUN dotnet restore
