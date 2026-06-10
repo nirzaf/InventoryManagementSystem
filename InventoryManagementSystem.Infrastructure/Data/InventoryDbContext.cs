@@ -25,6 +25,7 @@ public class InventoryDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<OrderDetail> OrderDetails { get; set; } = null!;
     public DbSet<StockTransaction> StockTransactions { get; set; } = null!;
     public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+    public DbSet<WebhookSubscription> WebhookSubscriptions { get; set; } = null!;
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

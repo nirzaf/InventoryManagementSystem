@@ -10,6 +10,7 @@ public class StockService : IStockService
     private readonly IRepository<StockTransaction> _txRepo;
     private readonly IRepository<Item> _itemRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IWebhookDispatcher _webhookDispatcher;
     private readonly ILogger<StockService> _logger;
 
     public StockService(
@@ -17,12 +18,14 @@ public class StockService : IStockService
         IRepository<StockTransaction> txRepo,
         IRepository<Item> itemRepo,
         IUnitOfWork unitOfWork,
+        IWebhookDispatcher webhookDispatcher,
         ILogger<StockService> logger)
     {
         _stockRepo = stockRepo;
         _txRepo = txRepo;
         _itemRepo = itemRepo;
         _unitOfWork = unitOfWork;
+        _webhookDispatcher = webhookDispatcher;
         _logger = logger;
     }
 
@@ -104,6 +107,7 @@ public class StockService : IStockService
         });
 
         _logger.LogInformation("Received {Qty} of item {ItemId} at location {LocId}", quantity, itemId, locationId);
+        await _webhookDispatcher.DispatchAsync("Stock.Received", new { ItemId = itemId, LocationId = locationId, Quantity = quantity, Notes = notes });
     }
 
     public async Task TransferStockAsync(int itemId, int fromLocationId, int toLocationId, int quantity, string? notes)
@@ -151,6 +155,7 @@ public class StockService : IStockService
         });
 
         _logger.LogInformation("Transferred {Qty} of item {ItemId} from {From} to {To}", quantity, itemId, fromLocationId, toLocationId);
+        await _webhookDispatcher.DispatchAsync("Stock.Transferred", new { ItemId = itemId, FromLocationId = fromLocationId, ToLocationId = toLocationId, Quantity = quantity, Notes = notes });
     }
 
     public async Task SellStockAsync(int itemId, int locationId, int quantity, string? notes)
@@ -180,5 +185,6 @@ public class StockService : IStockService
         });
 
         _logger.LogInformation("Sold {Qty} of item {ItemId} from location {LocId}", quantity, itemId, locationId);
+        await _webhookDispatcher.DispatchAsync("Stock.Sold", new { ItemId = itemId, LocationId = locationId, Quantity = quantity, Notes = notes });
     }
 }

@@ -20,6 +20,8 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using InventoryManagementSystem.Web.BackgroundServices;
+using InventoryManagementSystem.Core.Entities;
+using InventoryManagementSystem.Core.Models;
 
 namespace InventoryManagementSystem.Web;
 
@@ -113,6 +115,10 @@ public class Program
         builder.Services.AddScoped<IDemandForecastService, DemandForecastService>();
         builder.Services.AddScoped<IAnomalyDetectionService, AnomalyDetectionService>();
 
+        // HttpClient Factory & Webhooks
+        builder.Services.AddHttpClient();
+        builder.Services.AddSingleton<IWebhookDispatcher, InventoryManagementSystem.Infrastructure.Services.WebhookDispatcher>();
+
         // FluentValidation — auto-validates MediatR requests via pipeline behavior
         builder.Services.AddValidatorsFromAssemblyContaining<ItemValidator>();
         builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
@@ -149,12 +155,55 @@ public class Program
                 new HeaderApiVersionReader("x-api-version"));
         }).AddMvc();
 
+        // Swagger/OpenAPI
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+            {
+                Title = "Inventory Management System API",
+                Version = "v1",
+                Description = "Commercial-grade API endpoints for Inventory Management System"
+            });
+
+            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\""
+            });
+
+            c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+            {
+                {
+                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                    {
+                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                        {
+                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+        });
+
         // Global exception handling
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
         builder.Services.AddProblemDetails();
 
         // Background services
         builder.Services.AddHostedService<ForecastBackgroundService>();
+
+        // Response Compression
+        builder.Services.AddResponseCompression(options =>
+        {
+            options.EnableForHttps = true;
+        });
 
         // Rate limiting
         builder.Services.AddRateLimiter(options =>
@@ -173,6 +222,17 @@ public class Program
             .AddDbContextCheck<InventoryDbContext>();
 
         var app = builder.Build();
+
+        app.UseResponseCompression();
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Inventory API v1");
+            });
+        }
 
         if (!app.Environment.IsDevelopment())
         {
@@ -245,28 +305,41 @@ public class Program
         .WithName("GenerateToken")
         .WithTags("Auth");
 
-        v1.MapGet("/items", async (IMediator mediator) =>
-            Results.Ok(await mediator.Send(new GetAllItemsQuery())))
+        v1.MapGet("/items", async (int? page, int? pageSize, IMediator mediator) =>
+        {
+            if (page.HasValue && pageSize.HasValue)
+            {
+                var pagedItems = await mediator.Send(new GetItemsPagedQuery(page.Value, pageSize.Value));
+                return Results.Ok(ApiResponse<ItemsPagedResult>.CreateSuccess(pagedItems));
+            }
+            var allItems = await mediator.Send(new GetAllItemsQuery());
+            return Results.Ok(ApiResponse<IEnumerable<Item>>.CreateSuccess(allItems));
+        })
             .WithName("GetAllItems")
             .WithTags("Items");
 
         v1.MapGet("/items/{id:int}", async (int id, IMediator mediator) =>
         {
             var item = await mediator.Send(new GetItemByIdQuery(id));
-            return item is null ? Results.NotFound() : Results.Ok(item);
+            return item is null 
+                ? Results.NotFound(ApiResponse<Item>.CreateFailure("Item not found")) 
+                : Results.Ok(ApiResponse<Item>.CreateSuccess(item));
         })
             .WithName("GetItemById")
             .WithTags("Items");
 
         v1.MapGet("/stock", async (IMediator mediator) =>
-            Results.Ok(await mediator.Send(new GetAllStockQuery())))
+        {
+            var stock = await mediator.Send(new GetAllStockQuery());
+            return Results.Ok(ApiResponse<IEnumerable<StockInHand>>.CreateSuccess(stock));
+        })
             .WithName("GetAllStock")
             .WithTags("Stock");
 
         v1.MapPost("/stock/receive", async (ReceiveStockCommand cmd, IMediator mediator) =>
         {
             await mediator.Send(cmd);
-            return Results.NoContent();
+            return Results.Ok(ApiResponse.CreateSuccess());
         })
             .WithName("ReceiveStock")
             .WithTags("Stock")
@@ -275,17 +348,26 @@ public class Program
         // === AI / ML endpoints ===
 
         v1.MapGet("/forecast/{itemId:int}", async (int itemId, int? horizon, IMediator mediator) =>
-            Results.Ok(await mediator.Send(new ForecastDemandQuery(itemId, horizon ?? 30))))
+        {
+            var forecast = await mediator.Send(new ForecastDemandQuery(itemId, horizon ?? 30));
+            return Results.Ok(ApiResponse<DemandForecastResult>.CreateSuccess(forecast));
+        })
             .WithName("ForecastDemand")
             .WithTags("AI");
 
         v1.MapGet("/forecast", async (int? horizon, IMediator mediator) =>
-            Results.Ok(await mediator.Send(new ForecastAllItemsDemandQuery(horizon ?? 30))))
+        {
+            var forecasts = await mediator.Send(new ForecastAllItemsDemandQuery(horizon ?? 30));
+            return Results.Ok(ApiResponse<IReadOnlyList<DemandForecastResult>>.CreateSuccess(forecasts));
+        })
             .WithName("ForecastAllDemand")
             .WithTags("AI");
 
         v1.MapGet("/anomalies", async (DateTime? from, DateTime? to, IMediator mediator) =>
-            Results.Ok(await mediator.Send(new DetectAnomaliesQuery(from, to))))
+        {
+            var anomalies = await mediator.Send(new DetectAnomaliesQuery(from, to));
+            return Results.Ok(ApiResponse<IReadOnlyList<StockAnomaly>>.CreateSuccess(anomalies));
+        })
             .WithName("DetectAnomalies")
             .WithTags("AI");
 
