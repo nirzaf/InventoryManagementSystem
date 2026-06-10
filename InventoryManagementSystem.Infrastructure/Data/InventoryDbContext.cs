@@ -151,9 +151,12 @@ public class InventoryDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.HasQueryFilter(e => !e.IsDeleted);
             entity.HasIndex(e => e.ItemCode).IsUnique();
+            entity.HasIndex(e => e.Barcode).IsUnique();
             entity.Property(e => e.ItemCode).HasMaxLength(50).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Barcode).HasMaxLength(100);
             entity.Property(e => e.Rate).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.ReorderLevel).HasDefaultValue(10);
 
             entity.HasOne(i => i.Supplier)
                   .WithMany(s => s.Items)
@@ -231,6 +234,7 @@ public class InventoryDbContext : IdentityDbContext<ApplicationUser>
         {
             entity.Property(e => e.TransactionType).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.BatchNumber).HasMaxLength(100);
 
             entity.HasOne(st => st.Item)
                   .WithMany(i => i.StockTransactions)

@@ -12,5 +12,7 @@ public class StockTransaction : AuditableEntity
     public int Quantity { get; set; }
     public TransactionType TransactionType { get; set; }
     public DateTime TransactionDate { get; set; }
+    public string? BatchNumber { get; set; }
+    public DateTime? ExpiryDate { get; set; }
     public string? Notes { get; set; }
 }

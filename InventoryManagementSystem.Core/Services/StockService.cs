@@ -70,7 +70,7 @@ public class StockService : IStockService
         }
     }
 
-    public async Task ReceiveStockAsync(int itemId, int locationId, int quantity, string? notes)
+    public async Task ReceiveStockAsync(int itemId, int locationId, int quantity, string? notes, string? batchNumber = null, DateTime? expiryDate = null)
     {
         if (quantity <= 0) throw new ArgumentException("Quantity must be positive");
 
@@ -100,6 +100,8 @@ public class StockService : IStockService
                 Quantity = quantity,
                 TransactionType = TransactionType.Receive,
                 TransactionDate = DateTime.UtcNow,
+                BatchNumber = batchNumber,
+                ExpiryDate = expiryDate,
                 Notes = notes
             });
 
@@ -107,10 +109,11 @@ public class StockService : IStockService
         });
 
         _logger.LogInformation("Received {Qty} of item {ItemId} at location {LocId}", quantity, itemId, locationId);
-        await _webhookDispatcher.DispatchAsync("Stock.Received", new { ItemId = itemId, LocationId = locationId, Quantity = quantity, Notes = notes });
+        await _webhookDispatcher.DispatchAsync("Stock.Received", new { ItemId = itemId, LocationId = locationId, Quantity = quantity, Notes = notes, BatchNumber = batchNumber, ExpiryDate = expiryDate });
+        await CheckLowStockAsync(itemId);
     }
 
-    public async Task TransferStockAsync(int itemId, int fromLocationId, int toLocationId, int quantity, string? notes)
+    public async Task TransferStockAsync(int itemId, int fromLocationId, int toLocationId, int quantity, string? notes, string? batchNumber = null, DateTime? expiryDate = null)
     {
         if (quantity <= 0) throw new ArgumentException("Quantity must be positive");
         if (fromLocationId == toLocationId) throw new ArgumentException("Source and destination must be different");
@@ -148,6 +151,8 @@ public class StockService : IStockService
                 Quantity = quantity,
                 TransactionType = TransactionType.Transfer,
                 TransactionDate = DateTime.UtcNow,
+                BatchNumber = batchNumber,
+                ExpiryDate = expiryDate,
                 Notes = notes
             });
 
@@ -155,10 +160,11 @@ public class StockService : IStockService
         });
 
         _logger.LogInformation("Transferred {Qty} of item {ItemId} from {From} to {To}", quantity, itemId, fromLocationId, toLocationId);
-        await _webhookDispatcher.DispatchAsync("Stock.Transferred", new { ItemId = itemId, FromLocationId = fromLocationId, ToLocationId = toLocationId, Quantity = quantity, Notes = notes });
+        await _webhookDispatcher.DispatchAsync("Stock.Transferred", new { ItemId = itemId, FromLocationId = fromLocationId, ToLocationId = toLocationId, Quantity = quantity, Notes = notes, BatchNumber = batchNumber, ExpiryDate = expiryDate });
+        await CheckLowStockAsync(itemId);
     }
 
-    public async Task SellStockAsync(int itemId, int locationId, int quantity, string? notes)
+    public async Task SellStockAsync(int itemId, int locationId, int quantity, string? notes, string? batchNumber = null, DateTime? expiryDate = null)
     {
         if (quantity <= 0) throw new ArgumentException("Quantity must be positive");
 
@@ -178,6 +184,8 @@ public class StockService : IStockService
                 Quantity = quantity,
                 TransactionType = TransactionType.Sell,
                 TransactionDate = DateTime.UtcNow,
+                BatchNumber = batchNumber,
+                ExpiryDate = expiryDate,
                 Notes = notes
             });
 
@@ -186,5 +194,35 @@ public class StockService : IStockService
 
         _logger.LogInformation("Sold {Qty} of item {ItemId} from location {LocId}", quantity, itemId, locationId);
         await _webhookDispatcher.DispatchAsync("Stock.Sold", new { ItemId = itemId, LocationId = locationId, Quantity = quantity, Notes = notes });
+        await CheckLowStockAsync(itemId);
+    }
+
+    private async Task CheckLowStockAsync(int itemId)
+    {
+        try
+        {
+            var item = await _itemRepo.GetByIdAsync(itemId);
+            if (item == null) return;
+
+            var stockInHands = await _stockRepo.FindAsync(s => s.ItemId == itemId);
+            var totalStock = stockInHands.Sum(s => s.Quantity);
+
+            if (totalStock <= item.ReorderLevel)
+            {
+                _logger.LogWarning("Low stock alert for item {ItemCode}: Total Stock is {TotalStock}, Reorder Level is {ReorderLevel}", 
+                    item.ItemCode, totalStock, item.ReorderLevel);
+                await _webhookDispatcher.DispatchAsync("Stock.Low", new
+                {
+                    ItemId = itemId,
+                    ItemCode = item.ItemCode,
+                    TotalStock = totalStock,
+                    ReorderLevel = item.ReorderLevel
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking low stock level for item {ItemId}", itemId);
+        }
     }
 }
