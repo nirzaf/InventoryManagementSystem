@@ -3,6 +3,7 @@ using System;
 using InventoryManagementSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace InventoryManagementSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(InventoryDbContext))]
-    partial class InventoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260610055406_AddStockTransactionBatchAndExpiry")]
+    partial class AddStockTransactionBatchAndExpiry
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -245,12 +248,8 @@ namespace InventoryManagementSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderDate");
-
                     b.HasIndex("PONumber")
                         .IsUnique();
-
-                    b.HasIndex("Status");
 
                     b.HasIndex("SupplierId");
 
@@ -360,10 +359,6 @@ namespace InventoryManagementSystem.Infrastructure.Migrations
                     b.HasIndex("ItemId");
 
                     b.HasIndex("ToLocationId");
-
-                    b.HasIndex("TransactionDate");
-
-                    b.HasIndex("ItemId", "TransactionDate");
 
                     b.ToTable("StockTransactions");
                 });

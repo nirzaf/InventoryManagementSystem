@@ -2,6 +2,7 @@ using InventoryManagementSystem.Core.Entities;
 using InventoryManagementSystem.Core.Interfaces;
 using InventoryManagementSystem.Core.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.ML;
 using Microsoft.ML.Transforms.TimeSeries;
 
@@ -12,6 +13,7 @@ public class DemandForecastService : IDemandForecastService
     private readonly IRepository<StockTransaction> _txRepo;
     private readonly IRepository<Item> _itemRepo;
     private readonly ILogger<DemandForecastService> _logger;
+    private readonly IMemoryCache _cache;
 
     private const int MinDataPoints = 5;
     private const int DefaultWindowSize = 7;
@@ -20,14 +22,38 @@ public class DemandForecastService : IDemandForecastService
     public DemandForecastService(
         IRepository<StockTransaction> txRepo,
         IRepository<Item> itemRepo,
-        ILogger<DemandForecastService> logger)
+        ILogger<DemandForecastService> logger,
+        IMemoryCache cache)
     {
         _txRepo = txRepo;
         _itemRepo = itemRepo;
         _logger = logger;
+        _cache = cache;
     }
 
     public async Task<DemandForecastResult> ForecastDemandAsync(int itemId, int horizonDays = 30)
+    {
+        if (_cache.TryGetValue($"forecast_{itemId}", out DemandForecastResult? cachedResult) && cachedResult != null)
+        {
+            _logger.LogDebug("Returning cached forecast for item {ItemId}", itemId);
+            return cachedResult;
+        }
+
+        return await GenerateForecastAsync(itemId, horizonDays);
+    }
+
+    public async Task<IReadOnlyList<DemandForecastResult>> ForecastAllItemsAsync(int horizonDays = 30)
+    {
+        if (_cache.TryGetValue("forecast_all", out IReadOnlyList<DemandForecastResult>? cachedResult) && cachedResult != null)
+        {
+            _logger.LogDebug("Returning cached forecasts for all items");
+            return cachedResult;
+        }
+
+        return await GenerateForecastAllItemsAsync(horizonDays);
+    }
+
+    private async Task<DemandForecastResult> GenerateForecastAsync(int itemId, int horizonDays = 30)
     {
         var item = (await _itemRepo.FindAsync(i => i.Id == itemId)).FirstOrDefault();
 
@@ -38,7 +64,6 @@ public class DemandForecastService : IDemandForecastService
             ForecastHorizonDays = horizonDays
         };
 
-        // Gather historical demand: Sell + Transfer-out transactions
         var transactions = await _txRepo.FindAsync(t =>
             t.ItemId == itemId &&
             (t.TransactionType == TransactionType.Sell || t.TransactionType == TransactionType.Transfer));
@@ -102,7 +127,7 @@ public class DemandForecastService : IDemandForecastService
         return result;
     }
 
-    public async Task<IReadOnlyList<DemandForecastResult>> ForecastAllItemsAsync(int horizonDays = 30)
+    private async Task<IReadOnlyList<DemandForecastResult>> GenerateForecastAllItemsAsync(int horizonDays = 30)
     {
         var items = await _itemRepo.GetAllAsync();
         
@@ -110,7 +135,7 @@ public class DemandForecastService : IDemandForecastService
         {
             try
             {
-                return await ForecastDemandAsync(item.Id, horizonDays);
+                return await GenerateForecastAsync(item.Id, horizonDays);
             }
             catch (Exception ex)
             {
@@ -128,8 +153,6 @@ public class DemandForecastService : IDemandForecastService
 
         return results;
     }
-
-    // —— ML.NET data contracts ——
 
     private class DemandDataPoint
     {

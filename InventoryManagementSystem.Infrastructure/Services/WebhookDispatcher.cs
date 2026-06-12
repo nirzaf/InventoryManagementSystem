@@ -1,0 +1,90 @@
+using System;
+using System.Linq;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using InventoryManagementSystem.Core.Entities;
+using InventoryManagementSystem.Core.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace InventoryManagementSystem.Infrastructure.Services;
+
+public class WebhookDispatcher : IWebhookDispatcher
+{
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<WebhookDispatcher> _logger;
+
+    public WebhookDispatcher(
+        IServiceProvider serviceProvider,
+        IHttpClientFactory httpClientFactory,
+        ILogger<WebhookDispatcher> logger)
+    {
+        _serviceProvider = serviceProvider;
+        _httpClientFactory = httpClientFactory;
+        _logger = logger;
+    }
+
+    public async Task DispatchAsync<T>(string eventType, T payload)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IRepository<WebhookSubscription>>();
+            var subscriptions = await repo.FindAsync(s => s.IsActive && (s.EventType == eventType || s.EventType == "*"));
+
+            if (!subscriptions.Any())
+            {
+                return;
+            }
+
+            var client = _httpClientFactory.CreateClient("Webhooks");
+            var jsonPayload = JsonSerializer.Serialize(new
+            {
+                Event = eventType,
+                Timestamp = DateTime.UtcNow,
+                Data = payload
+            });
+
+            foreach (var sub in subscriptions)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var request = new HttpRequestMessage(HttpMethod.Post, sub.Url);
+                        request.Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                        request.Headers.Add("X-Inventory-Event", eventType);
+
+                        if (!string.IsNullOrEmpty(sub.Secret))
+                        {
+                            var keyBytes = Encoding.UTF8.GetBytes(sub.Secret);
+                            var payloadBytes = Encoding.UTF8.GetBytes(jsonPayload);
+                            using var hmac = new HMACSHA256(keyBytes);
+                            var hash = hmac.ComputeHash(payloadBytes);
+                            var signature = Convert.ToHexString(hash).ToLower();
+                            request.Headers.Add("X-Inventory-Signature", signature);
+                        }
+
+                        var response = await client.SendAsync(request);
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            _logger.LogWarning("Webhook target {Url} returned status code {StatusCode}", sub.Url, response.StatusCode);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to dispatch webhook to {Url}", sub.Url);
+                    }
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to dispatch webhook event {Event}", eventType);
+        }
+    }
+}

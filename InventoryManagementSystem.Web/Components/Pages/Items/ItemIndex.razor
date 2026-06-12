@@ -5,12 +5,16 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>Items</PageTitle>
 
 <div class="d-flex justify-space-between align-center mb-4">
     <MudText Typo="Typo.h4" Color="Color.Primary">Items</MudText>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/Items/Create">Add New Item</MudButton>
+    <div>
+        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="ExportToCsv" Class="mr-2">Export to CSV</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/Items/Create">Add New Item</MudButton>
+    </div>
 </div>
 
 <MudTable Items="@_items" Dense="true" Hover="true" Striped="true" Filter="new Func<Item,bool>(FilterFunc)">
@@ -20,6 +24,7 @@
     </ToolBarContent>
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.ItemCode)">Item Code</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Barcode ?? string.Empty)">Barcode</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Description)">Description</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Rate)">Rate</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<Item, object>(x=>x.Supplier?.Name ?? string.Empty)">Supplier</MudTableSortLabel></MudTh>
@@ -27,6 +32,7 @@
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Item Code">@context.ItemCode</MudTd>
+        <MudTd DataLabel="Barcode">@context.Barcode</MudTd>
         <MudTd DataLabel="Description">@context.Description</MudTd>
         <MudTd DataLabel="Rate">@context.Rate.ToString("C")</MudTd>
         <MudTd DataLabel="Supplier">@context.Supplier?.Name</MudTd>
@@ -63,6 +69,8 @@
             return true;
         if (element.ItemCode.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
+        if (element.Barcode?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
         if (element.Description.Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
         if (element.Supplier?.Name?.Contains(searchString, StringComparison.OrdinalIgnoreCase) == true)
@@ -90,5 +98,18 @@
                 Snackbar.Add(ex.Message, Severity.Error);
             }
         }
+    }
+
+    private async Task ExportToCsv()
+    {
+        var builder = new System.Text.StringBuilder();
+        builder.AppendLine("ItemCode,Barcode,Description,Rate,Supplier");
+        foreach (var item in _items)
+        {
+            builder.AppendLine($"\"{item.ItemCode}\",\"{item.Barcode}\",\"{item.Description}\",{item.Rate},\"{item.Supplier?.Name}\"");
+        }
+        var csvContent = builder.ToString();
+        await JS.InvokeVoidAsync("downloadFile", "Items_Export.csv", "text/csv", csvContent);
+        Snackbar.Add("Exported successfully", Severity.Success);
     }
 }

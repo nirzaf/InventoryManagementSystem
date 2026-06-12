@@ -6,6 +6,7 @@ using InventoryManagementSystem.Core.Interfaces;
 using InventoryManagementSystem.Core.Services;
 using InventoryManagementSystem.Tests.Common;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Caching.Memory;
 using Moq;
 
 namespace InventoryManagementSystem.Tests.Core.Services;
@@ -15,11 +16,12 @@ public class ItemServiceTests
     private readonly Fixture _fixture = InventoryFixtureFactory.Create();
     private readonly Mock<IRepository<Item>> _repoMock = new();
     private readonly Mock<IUnitOfWork> _uowMock = new();
+    private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
     private readonly ItemService _sut;
 
     public ItemServiceTests()
     {
-        _sut = new ItemService(_repoMock.Object, _uowMock.Object, NullLogger<ItemService>.Instance);
+        _sut = new ItemService(_repoMock.Object, _uowMock.Object, NullLogger<ItemService>.Instance, _cache);
     }
 
     [Fact]

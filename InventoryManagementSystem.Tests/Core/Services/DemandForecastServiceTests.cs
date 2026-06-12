@@ -5,6 +5,7 @@ using InventoryManagementSystem.Core.Entities;
 using InventoryManagementSystem.Core.Interfaces;
 using InventoryManagementSystem.Core.Services;
 using InventoryManagementSystem.Tests.Common;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -17,11 +18,14 @@ public class DemandForecastServiceTests
     private readonly Mock<IRepository<Item>> _itemRepoMock = new();
     private readonly DemandForecastService _sut;
 
+    private readonly Mock<IMemoryCache> _cacheMock = new();
+
     public DemandForecastServiceTests()
     {
         _sut = new DemandForecastService(
             _txRepoMock.Object, _itemRepoMock.Object,
-            NullLogger<DemandForecastService>.Instance);
+            NullLogger<DemandForecastService>.Instance,
+            _cacheMock.Object);
     }
 
     [Fact]

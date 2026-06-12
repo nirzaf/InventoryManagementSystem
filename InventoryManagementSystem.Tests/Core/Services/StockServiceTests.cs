@@ -17,6 +17,7 @@ public class StockServiceTests
     private readonly Mock<IRepository<StockTransaction>> _txRepoMock = new();
     private readonly Mock<IRepository<Item>> _itemRepoMock = new();
     private readonly Mock<IUnitOfWork> _uowMock = new();
+    private readonly Mock<IWebhookDispatcher> _webhookDispatcherMock = new();
     private readonly StockService _sut;
 
     public StockServiceTests()
@@ -26,6 +27,7 @@ public class StockServiceTests
             _txRepoMock.Object,
             _itemRepoMock.Object,
             _uowMock.Object,
+            _webhookDispatcherMock.Object,
             NullLogger<StockService>.Instance);
     }
 
