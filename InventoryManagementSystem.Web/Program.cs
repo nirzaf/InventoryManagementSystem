@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Asp.Versioning;
 using FluentValidation;
 using InventoryManagementSystem.Core.Behaviors;
@@ -9,8 +10,10 @@ using InventoryManagementSystem.Core.Services;
 using InventoryManagementSystem.Core.Validators;
 using InventoryManagementSystem.Infrastructure.Data;
 using InventoryManagementSystem.Infrastructure.Repositories;
+using InventoryManagementSystem.Web.Middleware;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Serilog;
@@ -31,9 +34,17 @@ public class Program
 
         builder.Host.UseSerilog();
 
-        // Database
-        builder.Services.AddDbContext<InventoryDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        // Database (skip PostgreSQL in Testing — replaced by InMemory in test factory)
+        if (!builder.Environment.IsEnvironment("Testing"))
+        {
+            builder.Services.AddDbContext<InventoryDbContext>(options =>
+                options.UseNpgsql(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    npgsql => npgsql.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorCodesToAdd: null)));
+        }
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -60,6 +71,37 @@ public class Program
 
         // HTTP context accessor for audit fields
         builder.Services.AddHttpContextAccessor();
+
+        // CORS
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("Default", policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            });
+        });
+
+        // Rate limiting
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            // API endpoints: 100 requests/minute
+            options.AddFixedWindowLimiter("Api", limiter =>
+            {
+                limiter.PermitLimit = 100;
+                limiter.Window = TimeSpan.FromMinutes(1);
+                limiter.QueueLimit = 10;
+            });
+            // AI endpoints: 10 requests/minute (CPU-intensive ML.NET)
+            options.AddFixedWindowLimiter("Ai", limiter =>
+            {
+                limiter.PermitLimit = 10;
+                limiter.Window = TimeSpan.FromMinutes(1);
+                limiter.QueueLimit = 2;
+            });
+        });
 
         // Repositories
         builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -108,11 +150,12 @@ public class Program
         builder.Services.AddProblemDetails();
 
         // Health checks
-        builder.Services.AddHealthChecks();
+        builder.Services.AddHealthChecks()
+            .AddDbContextCheck<InventoryDbContext>();
 
         var app = builder.Build();
 
-        if (!app.Environment.IsDevelopment())
+        if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"))
         {
             app.UseExceptionHandler("/Home/Error");
 
@@ -122,6 +165,11 @@ public class Program
                 app.UseHsts();
             }
         }
+        else
+        {
+            // Still add exception handler middleware (without redirect path) to invoke IExceptionHandlers
+            app.UseExceptionHandler(new ExceptionHandlerOptions { AllowStatusCode404Response = true });
+        }
 
         // Skip HTTPS redirection in Docker or reverse-proxy deployments
         if (string.IsNullOrEmpty(builder.Configuration["DISABLE_HTTPS"]))
@@ -129,9 +177,11 @@ public class Program
             app.UseHttpsRedirection();
         }
         app.UseStaticFiles();
+        app.UseSecurityHeaders();
         app.UseSerilogRequestLogging();
 
         app.UseRouting();
+        app.UseRateLimiter();
         app.UseCors("Default");
         app.UseAuthentication();
         app.UseAuthorization();
@@ -144,54 +194,29 @@ public class Program
             .AddInteractiveServerRenderMode();
         app.MapHealthChecks("/health");
 
-        // === Headless API v1 (MediatR-powered minimal endpoints) ===
+        // === Headless API v1 (MediatR-powered minimal endpoints for AI/ML only) ===
         var v1 = app.MapGroup("/api/v1")
             .WithTags("API v1")
-            .RequireAuthorization();
+            .RequireAuthorization()
+            .RequireRateLimiting("Api");
 
-        v1.MapGet("/items", async (IMediator mediator) =>
-            Results.Ok(await mediator.Send(new GetAllItemsQuery())))
-            .WithName("GetAllItems")
-            .WithTags("Items");
+        // === AI / ML endpoints (rate-limited separately) ===
+        var ai = app.MapGroup("/api/v1")
+            .WithTags("AI")
+            .RequireAuthorization()
+            .RequireRateLimiting("Ai");
 
-        v1.MapGet("/items/{id:int}", async (int id, IMediator mediator) =>
-        {
-            var item = await mediator.Send(new GetItemByIdQuery(id));
-            return item is null ? Results.NotFound() : Results.Ok(item);
-        })
-            .WithName("GetItemById")
-            .WithTags("Items");
-
-        v1.MapGet("/stock", async (IMediator mediator) =>
-            Results.Ok(await mediator.Send(new GetAllStockQuery())))
-            .WithName("GetAllStock")
-            .WithTags("Stock");
-
-        v1.MapPost("/stock/receive", async (ReceiveStockCommand cmd, IMediator mediator) =>
-        {
-            await mediator.Send(cmd);
-            return Results.NoContent();
-        })
-            .WithName("ReceiveStock")
-            .WithTags("Stock")
-            .RequireAuthorization(policy => policy.RequireRole("Admin", "Manager", "Staff"));
-
-        // === AI / ML endpoints ===
-
-        v1.MapGet("/forecast/{itemId:int}", async (int itemId, int? horizon, IMediator mediator) =>
+        ai.MapGet("/forecast/{itemId:int}", async (int itemId, int? horizon, IMediator mediator) =>
             Results.Ok(await mediator.Send(new ForecastDemandQuery(itemId, horizon ?? 30))))
-            .WithName("ForecastDemand")
-            .WithTags("AI");
+            .WithName("ForecastDemand");
 
-        v1.MapGet("/forecast", async (int? horizon, IMediator mediator) =>
+        ai.MapGet("/forecast", async (int? horizon, IMediator mediator) =>
             Results.Ok(await mediator.Send(new ForecastAllItemsDemandQuery(horizon ?? 30))))
-            .WithName("ForecastAllDemand")
-            .WithTags("AI");
+            .WithName("ForecastAllDemand");
 
-        v1.MapGet("/anomalies", async (DateTime? from, DateTime? to, IMediator mediator) =>
+        ai.MapGet("/anomalies", async (DateTime? from, DateTime? to, IMediator mediator) =>
             Results.Ok(await mediator.Send(new DetectAnomaliesQuery(from, to))))
-            .WithName("DetectAnomalies")
-            .WithTags("AI");
+            .WithName("DetectAnomalies");
 
         // Auto-apply EF Core migrations (skip in Testing)
         if (!app.Environment.IsEnvironment("Testing"))
