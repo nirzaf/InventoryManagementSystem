@@ -443,9 +443,12 @@ jobs:
       - name: Expose image digest
         if: github.event_name != 'pull_request'
         run: |
-          echo "## Image digest for ${{ steps.meta.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Tags:" >> "$GITHUB_STEP_SUMMARY"
-          printf -- "- %s\n" ${{ toJson(fromJSON(steps.meta.outputs.json).tags) }} >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Image digest for ${{ steps.meta.outputs.version }}"
+            echo "Tags:"
+            printf '%s\n' '${{ steps.meta.outputs.json }}' \
+              | jq -r '.tags[] | "- " + .'
+          } >> "$GITHUB_STEP_SUMMARY"
 ```
 
 ### `pages.yml`
